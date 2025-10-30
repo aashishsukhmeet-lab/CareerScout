@@ -1,16 +1,14 @@
-// api/jsearch.js
-// Vercel Serverless Function to proxy JSearch API requests
-// This protects your RapidAPI key from being exposed in client code
-
 export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*'); // Change to your domain in production
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // CORS headers - MUST be first
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
   
   // Handle preflight
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
   
   // Only allow GET
@@ -40,74 +38,4 @@ export default async function handler(req, res) {
   // Validate required params
   if (!query) {
     return res.status(400).json({ 
-      error: 'Missing required parameter: query' 
-    });
-  }
-  
-  // Build API request
-  const API_HOST = "jsearch.p.rapidapi.com";
-  const API_URL = `https://${API_HOST}/search`;
-  
-  const params = new URLSearchParams({
-    query: query,
-    page: String(page),
-    num_pages: "1",
-    date_posted: "all",
-  });
-  
-  if (location && remote_jobs_only !== "true") {
-    params.set("location", location);
-    if (radius) {
-      params.set("radius", String(radius));
-    }
-  }
-  
-  params.set("remote_jobs_only", remote_jobs_only === "true" ? "true" : "false");
-  
-  const url = `${API_URL}?${params.toString()}`;
-  
-  console.log(`[JSearch Proxy] Request: ${url.substring(0, 100)}...`);
-  
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        "X-RapidAPI-Key": API_KEY,
-        "X-RapidAPI-Host": API_HOST,
-      },
-    });
-    
-    // Handle rate limiting
-    if (response.status === 429) {
-      console.warn('[JSearch Proxy] Rate limited by RapidAPI');
-      return res.status(429).json({ 
-        error: 'Rate limited by RapidAPI. Please try again in a few minutes.',
-        status: 429
-      });
-    }
-    
-    // Handle other errors
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[JSearch Proxy] API Error ${response.status}:`, errorText);
-      return res.status(response.status).json({
-        error: `JSearch API error: ${response.statusText}`,
-        status: response.status,
-        details: errorText
-      });
-    }
-    
-    // Parse and return data
-    const data = await response.json();
-    console.log(`[JSearch Proxy] Success: ${data.data?.length || 0} jobs found`);
-    
-    return res.status(200).json(data);
-    
-  } catch (error) {
-    console.error('[JSearch Proxy] Unexpected error:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
-    });
-  }
-}
+      error:
