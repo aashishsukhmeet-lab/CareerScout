@@ -34,4 +34,216 @@
           <h1 class="text-3xl font-bold text-blue-600">🔍 Job Search</h1>
           <p class="text-gray-600 mt-1">Search real-time jobs from thousands of sources</p>
         </div>
-        <a hr
+        <a href="index.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+          ← Back to CareerScout
+        </a>
+      </div>
+    </header>
+
+    <div id="jsearch-root"></div>
+  </div>
+
+  <script>
+    // ========== INLINE WIDGET CODE ==========
+    let state = {
+      query: '',
+      location: '',
+      radius: '25',
+      remoteOnly: false,
+      loading: false,
+      error: null,
+      results: [],
+      lastRequestUrl: '',
+      apiBase: 'https://careerscout.onrender.com/api'
+    };
+
+    function formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+        if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+        return `${Math.floor(diffDays / 365)} years ago`;
+      } catch {
+        return dateString;
+      }
+    }
+
+    function formatSalary(job) {
+      const min = job.job_min_salary;
+      const max = job.job_max_salary;
+      
+      if (!min && !max) return 'Not specified';
+      
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      });
+      
+      if (min && max) return `${formatter.format(min)} - ${formatter.format(max)}/year`;
+      if (min) return `${formatter.format(min)}+/year`;
+      return `Up to ${formatter.format(max)}/year`;
+    }
+
+    async function searchJobs() {
+      state.loading = true;
+      state.error = null;
+      state.results = [];
+      render();
+      
+      const params = new URLSearchParams({
+        query: state.query || 'software engineer',
+        page: '1',
+        remote_jobs_only: state.remoteOnly ? 'true' : 'false'
+      });
+      
+      if (state.location && !state.remoteOnly) {
+        params.set('location', state.location);
+        params.set('radius', state.radius);
+      }
+      
+      const url = `${state.apiBase}/jsearch?${params.toString()}`;
+      state.lastRequestUrl = url;
+      
+      try {
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`API Error (${response.status})`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.data) {
+          state.results = data.data;
+        } else {
+          throw new Error('No results found');
+        }
+      } catch (err) {
+        state.error = err.message;
+        console.error('Search error:', err);
+      } finally {
+        state.loading = false;
+        render();
+      }
+    }
+
+    function render() {
+      const root = document.getElementById('jsearch-root');
+      if (!root) return;
+      
+      root.innerHTML = `
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <form id="search-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Job Title / Keywords</label>
+                <input type="text" id="query" value="${state.query}" placeholder="e.g., Product Manager"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Location</label>
+                <input type="text" id="location" value="${state.location}" placeholder="e.g., New York, NY"
+                  ${state.remoteOnly ? 'disabled' : ''}
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${state.remoteOnly ? 'bg-gray-100' : ''}">
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Radius (miles)</label>
+                <select id="radius" ${state.remoteOnly ? 'disabled' : ''}
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg ${state.remoteOnly ? 'bg-gray-100' : ''}">
+                  <option value="25" ${state.radius === '25' ? 'selected' : ''}>25 miles</option>
+                  <option value="50" ${state.radius === '50' ? 'selected' : ''}>50 miles</option>
+                  <option value="100" ${state.radius === '100' ? 'selected' : ''}>100 miles</option>
+                </select>
+              </div>
+              <div class="flex items-end">
+                <label class="flex items-center cursor-pointer">
+                  <input type="checkbox" id="remoteOnly" ${state.remoteOnly ? 'checked' : ''}
+                    class="w-5 h-5 text-blue-600 border-gray-300 rounded">
+                  <span class="ml-2 text-sm font-semibold text-gray-700">Remote Only</span>
+                </label>
+              </div>
+              <div class="flex items-end">
+                <button type="submit" class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">
+                  🔍 Search Jobs
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+        
+        ${state.loading ? '<div class="bg-white rounded-lg shadow-lg p-8 text-center"><div class="loading-spinner"></div><p class="text-gray-600 mt-4">Searching...</p></div>' : ''}
+        ${state.error ? `<div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg"><p class="text-red-700">${state.error}</p></div>` : ''}
+        ${state.results.length > 0 ? renderResults() : ''}
+      `;
+      
+      attachEventListeners();
+    }
+
+    function renderResults() {
+      return `
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">Found ${state.results.length} Jobs</h2>
+          <div class="space-y-4">
+            ${state.results.map(job => `
+              <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <h3 class="text-lg font-bold text-gray-900">${job.job_title}</h3>
+                    <p class="text-blue-600 font-semibold">${job.employer_name}</p>
+                    <p class="text-sm text-gray-600 mt-1">
+                      ${job.job_is_remote ? '🌐 Remote' : `📍 ${job.job_city || ''}, ${job.job_state || ''}`}
+                      • ${formatDate(job.job_posted_at_datetime_utc)}
+                    </p>
+                    <p class="text-sm font-medium text-green-700 mt-1">${formatSalary(job)}</p>
+                  </div>
+                  <div class="ml-4">
+                    ${job.job_apply_link ? `<a href="${job.job_apply_link}" target="_blank" 
+                      class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Apply</a>` : ''}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function attachEventListeners() {
+      const form = document.getElementById('search-form');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          state.query = document.getElementById('query').value;
+          state.location = document.getElementById('location').value;
+          state.radius = document.getElementById('radius').value;
+          state.remoteOnly = document.getElementById('remoteOnly').checked;
+          searchJobs();
+        });
+      }
+      
+      const remoteCheckbox = document.getElementById('remoteOnly');
+      if (remoteCheckbox) {
+        remoteCheckbox.addEventListener('change', (e) => {
+          state.remoteOnly = e.target.checked;
+          render();
+        });
+      }
+    }
+
+    // Initialize
+    render();
+  </script>
+</body>
+</html>
