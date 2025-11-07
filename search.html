@@ -3,25 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; connect-src 'self' https://*.vercel.app https://*.netlify.app https://jsearch.p.rapidapi.com; img-src 'self' data: https:;">
   <title>Job Search - CareerScout</title>
-  
-  <!-- OPTION 1: Use Tailwind CDN (Recommended - looks better) -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- OPTION 2: Use Plain CSS (Uncomment below, comment Tailwind above) -->
-  <!-- <link rel="stylesheet" href="styles-search.css"> -->
-  
   <style>
-    /* Minimal custom styles */
     body {
       background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
       min-height: 100vh;
-    }
-    .container-main {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 20px;
     }
     .loading-spinner {
       border: 3px solid #f3f3f3;
@@ -39,37 +27,11 @@
   </style>
 </head>
 <body>
-  <div class="container-main">
-    <!-- Header with back link -->
+  <div class="max-w-7xl mx-auto p-6">
     <header class="bg-white rounded-lg shadow-lg p-6 mb-6">
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-3xl font-bold text-blue-600">🔍 Job Search</h1>
           <p class="text-gray-600 mt-1">Search real-time jobs from thousands of sources</p>
         </div>
-        <a href="index.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-          ← Back to CareerScout
-        </a>
-      </div>
-    </header>
-
-    <!-- Widget Mount Point -->
-    <div id="jsearch-root"></div>
-  </div>
-
-  <!-- Load the widget -->
-  <script type="module">
-    import { mountJSearchWidget } from './jsearch-widget.js';
-    
-    // Mount the widget
-    mountJSearchWidget({
-      root: document.getElementById('jsearch-root'),
-      // IMPORTANT: Change this to your deployed API URL
-      // Local dev: '/api' (if using Vercel dev)
-      // Production: 'https://your-app.vercel.app/api' or '/.netlify/functions'
-      apiBase: 'https://careerscout.onrender.com/api,  // <-- UPDATE THIS AFTER DEPLOYMENT
-      useTailwind: true  // Set to false if using styles-search.css
-    });
-  </script>
-</body>
-</html>
+        <a hr
