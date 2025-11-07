@@ -1,3 +1,4 @@
+
 // jsearch-widget.js - Vanilla JS Job Search Widget
 // No React, no build step required
 
