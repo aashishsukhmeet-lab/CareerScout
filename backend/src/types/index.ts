@@ -54,3 +54,44 @@ export interface LearnedResponse {
   insights: Insight[];
   nextIdeas: string[];
 }
+
+// Job Search Types (RapidAPI Integration)
+export interface JobPosting {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  remote: boolean;
+  postedAt: string; // ISO date
+  descriptionSnippet: string;
+  source: string; // provider/job board
+  applyUrl: string;
+  salary?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+    period?: 'year' | 'month' | 'hour';
+  };
+  tags?: string[];
+  raw?: unknown; // original item for debug
+}
+
+export interface SearchResponse {
+  items: JobPosting[];
+  page: number;
+  nextPage?: number;
+  totalApprox?: number;
+  meta: {
+    provider: string;
+    generatedAt: string;
+  };
+}
+
+export interface SearchParams {
+  q: string;
+  page?: number;
+  location?: string;
+  remote?: boolean;
+  employmentType?: string[];
+  postedSinceDays?: number;
+}

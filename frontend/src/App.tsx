@@ -4,6 +4,7 @@ import { useProfile } from './hooks/useApi';
 import OnboardingWizard from './components/OnboardingWizard';
 import Feed from './components/Feed';
 import WhatWeLearned from './components/WhatWeLearned';
+import Search from './components/Search';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,12 +45,20 @@ function Layout() {
                 <div className="max-w-4xl mx-auto px-4 py-4">
                   <div className="flex items-center justify-between">
                     <h1 className="text-xl font-bold text-gray-900">CareerScout</h1>
-                    <a
-                      href="/insights"
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      What We Learned →
-                    </a>
+                    <div className="flex items-center gap-4">
+                      <a
+                        href="/search"
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        🔍 Search Jobs
+                      </a>
+                      <a
+                        href="/insights"
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        What We Learned →
+                      </a>
+                    </div>
                   </div>
                 </div>
               </nav>
@@ -74,6 +83,7 @@ function Layout() {
           )
         }
       />
+      <Route path="/search" element={<Search />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

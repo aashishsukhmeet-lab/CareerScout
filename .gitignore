@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+build/
+**/build/
+
+# Environment files
+.env
+**/.env
+.env.local
+**/.env.local
+
+# Lock files (keep for production, but don't track changes)
+package-lock.json
+**/package-lock.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma
+prisma/seed.js
+**/prisma/seed.js
+
+# Test coverage
+coverage/
+**/coverage/
+.nyc_output/
+**/.nyc_output/
