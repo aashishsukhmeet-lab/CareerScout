@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.openai.com; img-src 'self' data:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://api.openai.com https://jsearch.p.rapidapi.com; img-src 'self' data:; worker-src 'self' blob:;">
   <title>CareerScout - AI-Powered Career Discovery</title>
 
   <!-- Google Fonts - Inter -->
@@ -221,7 +221,11 @@
               <span>🗑️</span>
               <span>Reset Memory</span>
             </button>
-            <a href="search.html" class="btn btn-outline btn-block">
+            <button class="btn btn-outline btn-block" id="resetProfileBtn">
+              <span>🔄</span>
+              <span>Reset Profile</span>
+            </button>
+            <a href="search.html" class="btn btn-outline btn-block" style="margin-top: 8px;">
               <span>🔍</span>
               <span>Search Real Jobs</span>
             </a>
@@ -231,7 +235,128 @@
     </div>
   </main>
 
-  <!-- App Script -->
-  <script src="app.js"></script>
+  <!-- Onboarding Modal -->
+  <div id="onboardingModal" class="onboarding-modal" style="display: none;">
+    <div class="onboarding-backdrop"></div>
+    <div class="onboarding-card">
+      <!-- Progress Indicator -->
+      <div class="progress-indicator">
+        <div class="progress-text">Step <span id="progressText">1/3</span></div>
+        <div class="progress-bar">
+          <div class="progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Step 1: Role -->
+      <div id="step1" class="onboarding-step">
+        <h2 class="onboarding-title">What role are you looking for?</h2>
+        <p class="onboarding-subtitle">Tell us the job title you're interested in</p>
+        <form id="roleForm">
+          <div class="form-group">
+            <input
+              type="text"
+              id="roleInput"
+              class="form-input onboarding-input"
+              placeholder="e.g., Product Manager, Software Engineer"
+              autocomplete="off"
+              required
+            >
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg">
+            Next →
+          </button>
+        </form>
+      </div>
+
+      <!-- Step 2: Location -->
+      <div id="step2" class="onboarding-step" style="display: none;">
+        <h2 class="onboarding-title">Where are you looking?</h2>
+        <p class="onboarding-subtitle">Enter your preferred location or "Remote"</p>
+        <form id="locationForm">
+          <div class="form-group">
+            <input
+              type="text"
+              id="locationInput"
+              class="form-input onboarding-input"
+              placeholder="e.g., Austin, TX or Remote"
+              autocomplete="off"
+              required
+            >
+          </div>
+          <button type="submit" class="btn btn-primary btn-block btn-lg">
+            Next →
+          </button>
+        </form>
+      </div>
+
+      <!-- Step 3: Resume -->
+      <div id="step3" class="onboarding-step" style="display: none;">
+        <h2 class="onboarding-title">Upload your resume</h2>
+        <p class="onboarding-subtitle">We'll use AI to match you with the best jobs</p>
+        
+        <!-- File Upload Area -->
+        <div id="uploadArea" class="upload-area">
+          <div class="upload-icon">📄</div>
+          <div class="upload-text">
+            <strong>Click to upload</strong> or drag and drop
+          </div>
+          <div class="upload-hint">PDF or TXT files only</div>
+          <input
+            type="file"
+            id="resumeFileInput"
+            accept=".pdf,.txt"
+            style="display: none;"
+          >
+        </div>
+
+        <!-- Text Fallback -->
+        <div class="text-divider">
+          <span>or paste your resume text</span>
+        </div>
+
+        <form id="resumeForm">
+          <div class="form-group">
+            <textarea
+              id="resumeTextarea"
+              class="form-textarea"
+              placeholder="Paste your resume text here..."
+              rows="6"
+            ></textarea>
+          </div>
+          
+          <div style="display: flex; gap: 12px;">
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+              Analyze with AI ✨
+            </button>
+            <button type="button" id="skipAIBtn" class="btn btn-secondary btn-lg">
+              Skip AI
+            </button>
+          </div>
+        </form>
+
+        <!-- Loading Skeleton -->
+        <div id="loadingSkeleton" class="skeleton-wrapper" style="display: none;">
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="toast"></div>
+
+  <!-- PDF.js Library -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script>
+    // Configure PDF.js worker
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    }
+  </script>
+
+  <!-- App Script (ES6 Module) -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>
