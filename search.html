@@ -54,7 +54,10 @@
       error: null,
       results: [],
       lastRequestUrl: '',
-      apiBase: 'https://careerscout.onrender.com/api'
+      // Direct RapidAPI configuration
+      apiKey: '07a7dbe8f3msh3e7142e5f6f14cfp18e3cfjsn3b5e328da4fb',
+      apiHost: 'jsearch.p.rapidapi.com',
+      apiUrl: 'https://jsearch.p.rapidapi.com/search'
     };
 
     function formatDate(dateString) {
@@ -99,30 +102,41 @@
       state.error = null;
       state.results = [];
       render();
-      
+
       const params = new URLSearchParams({
         query: state.query || 'software engineer',
         page: '1',
+        num_pages: '1',
+        date_posted: 'all',
         remote_jobs_only: state.remoteOnly ? 'true' : 'false'
       });
-      
+
       if (state.location && !state.remoteOnly) {
         params.set('location', state.location);
         params.set('radius', state.radius);
       }
-      
-      const url = `${state.apiBase}/jsearch?${params.toString()}`;
+
+      const url = `${state.apiUrl}?${params.toString()}`;
       state.lastRequestUrl = url;
-      
+
       try {
-        const response = await fetch(url);
-        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'x-rapidapi-key': state.apiKey,
+            'x-rapidapi-host': state.apiHost
+          }
+        });
+
         if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+          }
           throw new Error(`API Error (${response.status})`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.status === 'OK' && data.data) {
           state.results = data.data;
         } else {
