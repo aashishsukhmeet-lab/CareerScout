@@ -299,6 +299,8 @@
       const params = new URLSearchParams({
         query: state.query || 'software engineer',
         page: '1',
+        num_pages: '1',
+        date_posted: 'all',
         remote_jobs_only: state.remoteOnly ? 'true' : 'false'
       });
 
@@ -313,6 +315,9 @@
         const response = await fetch(url);
 
         if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+          }
           throw new Error(`API Error (${response.status})`);
         }
 
