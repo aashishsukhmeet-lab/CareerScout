@@ -43,3 +43,6 @@ coverage/
 **/coverage/
 .nyc_output/
 **/.nyc_output/
+
+# Configuration files with API keys
+js/config.js
