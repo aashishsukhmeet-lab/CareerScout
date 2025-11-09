@@ -434,3 +434,234 @@ MIT
 ---
 
 **Built with ❤️ by the CareerScout team**
+
+---
+
+## 🎯 Standalone Single-Page App (NEW!)
+
+CareerScout now includes a standalone single-page application with AI-powered onboarding that works without the backend!
+
+### Features
+
+**AI-Powered Onboarding Flow:**
+- ✨ First-visit detection - onboarding shown only on first visit
+- 📝 3-step personalized onboarding:
+  1. **Role** - What job are you looking for?
+  2. **Location** - Where do you want to work?
+  3. **Resume** - Upload PDF/TXT or paste text
+- 🤖 AI resume analysis using OpenAI (with fallback)
+- 💾 Profile persistence with localStorage
+- 🔄 Auto-resume on page refresh
+
+**Smart Job Matching:**
+- 🎯 Weighted match scoring:
+  - 40% keyword/skill overlap
+  - 30% job title similarity
+  - 20% location match
+  - 10% seniority fit
+- 📊 Match explanations ("Why this matches")
+- 🏆 Match badges (high/medium/low)
+- 🔍 Real job search via RapidAPI JSearch
+
+**User Experience:**
+- 📱 Mobile-responsive design
+- 🌙 Dark mode support
+- 🎨 LinkedIn-inspired UI
+- ⚡ Fast, client-side rendering
+- 🔔 Toast notifications
+
+### Quick Start (Standalone App)
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/aashishsukhmeet-lab/CareerScout.git
+cd CareerScout
+```
+
+2. **Configure API keys:**
+```bash
+# Copy configuration template
+cp js/config.example.js js/config.js
+
+# Edit js/config.js and add your keys
+```
+
+3. **Get API Keys:**
+
+**OpenAI API (for AI resume analysis):**
+- Sign up at [platform.openai.com](https://platform.openai.com)
+- Create an API key
+- Add to `js/config.js`: `AI_API_KEY: 'sk-...'`
+- **Note:** AI is optional - the app will work with a fallback if not configured
+
+**RapidAPI JSearch (for job search):**
+- Sign up at [rapidapi.com](https://rapidapi.com)
+- Subscribe to [JSearch API](https://rapidapi.com/letscrape-6bRBa3QguO5/api/jsearch) (free tier available)
+- Add to `js/config.js`: `JOBS_API_KEY: 'your_key'`
+
+4. **Open `index.html` in a browser:**
+```bash
+# Using Python
+python3 -m http.server 8000
+
+# Using Node.js
+npx http-server -p 8000
+
+# Then open: http://localhost:8000
+```
+
+That's it! No build process, no dependencies, no database needed.
+
+### Configuration Options
+
+Edit `js/config.js`:
+
+```javascript
+export const CONFIG = {
+  // OpenAI API
+  AI_API_BASE: 'https://api.openai.com/v1',
+  AI_API_KEY: 'YOUR_KEY_HERE',
+  AI_MODEL: 'gpt-4o-mini',  // Cost-effective
+  
+  // RapidAPI JSearch
+  JOBS_API_KEY: 'YOUR_KEY_HERE',
+  JOBS_API_HOST: 'jsearch.p.rapidapi.com',
+  
+  // Feature Flags
+  SHOW_FAKE_JOBS: false,     // Show mock data without profile
+  ENABLE_AI: true,           // Enable AI resume analysis
+  ENABLE_REAL_JOBS: true,    // Fetch real jobs
+  
+  // Matching Weights (customize algorithm)
+  WEIGHTS: {
+    KEYWORD_SKILL: 0.40,     // 40% weight
+    TITLE_SIMILARITY: 0.30,  // 30% weight
+    LOCATION_MATCH: 0.20,    // 20% weight
+    SENIORITY_FIT: 0.10      // 10% weight
+  }
+};
+```
+
+### File Structure (Standalone App)
+
+```
+CareerScout/
+├── index.html              # Main page
+├── app.js                  # Application logic (ES6 module)
+├── style.css               # Styles
+├── search.html             # Advanced job search page
+├── js/
+│   ├── config.example.js   # Configuration template
+│   ├── config.js           # Your API keys (gitignored)
+│   ├── memory.js           # localStorage wrapper
+│   ├── ai.js               # AI resume analysis
+│   ├── resume.js           # PDF/TXT parser
+│   ├── matching.js         # Match scoring algorithm
+│   └── onboarding.js       # Onboarding UI flow
+└── .gitignore              # Excludes config.js
+```
+
+### How It Works
+
+1. **First Visit:**
+   - User sees onboarding modal (not fake jobs)
+   - Completes 3-step flow
+   - Uploads resume → AI extracts skills/keywords
+   - Profile saved to localStorage
+
+2. **Job Search:**
+   - Fetches real jobs from RapidAPI JSearch
+   - Based on user's role + location
+   - Falls back to mock data if API unavailable
+
+3. **Matching:**
+   - Each job scored against user profile
+   - Weighted algorithm (skills, title, location, seniority)
+   - Jobs sorted by match score (0-100)
+   - Explanations generated ("SQL match", "Remote preferred")
+
+4. **Persistence:**
+   - Profile stored in localStorage
+   - On refresh: auto-loads profile + searches jobs
+   - "Reset Profile" button clears and restarts
+
+### Browser Compatibility
+
+- ✅ Chrome/Edge 90+
+- ✅ Firefox 88+
+- ✅ Safari 14+
+- ✅ Mobile browsers
+- ⚠️ Requires JavaScript enabled
+- ⚠️ PDF upload requires modern browser (for PDF.js)
+
+### Security Notes
+
+- 🔒 API keys stored in `js/config.js` (gitignored)
+- 🔒 Keys used client-side (consider rate limits)
+- 🔒 For production: use backend proxy for API calls
+- 🔒 CSP headers configured in index.html
+
+### Troubleshooting
+
+**Onboarding not showing:**
+- Check: `CONFIG.SHOW_FAKE_JOBS` should be `false`
+- Clear localStorage: `localStorage.clear()`
+
+**AI not working:**
+- Verify API key in `js/config.js`
+- Check browser console for errors
+- Fallback will be used if AI fails
+
+**Jobs not loading:**
+- Verify RapidAPI key
+- Check rate limits (free tier: 2,500/month)
+- Mock jobs will be shown as fallback
+
+**PDF upload fails:**
+- Ensure PDF.js loaded (check console)
+- Try text paste as alternative
+- Some PDFs may have extraction issues
+
+### Development
+
+**Hot reload:**
+```bash
+# Use live-server for auto-reload
+npx live-server --port=8000
+```
+
+**Testing:**
+```bash
+# Clear localStorage for fresh start
+localStorage.clear()
+
+# Test with mock data
+# Set in config.js: ENABLE_REAL_JOBS: false
+```
+
+**Debugging:**
+```javascript
+// Access app state in console
+window.CareerScoutApp.state
+
+// Test AI connection
+import { testAIConnection } from './js/ai.js';
+await testAIConnection();
+```
+
+### Customization
+
+**Change matching algorithm weights:**
+Edit `js/config.js` → `WEIGHTS` object
+
+**Modify onboarding steps:**
+Edit `js/onboarding.js` → update step HTML and handlers
+
+**Customize UI theme:**
+Edit `style.css` → CSS variables in `:root`
+
+**Add new skills to matching:**
+Edit `js/matching.js` → `extractSkillsFromText()` function
+
+---
+
