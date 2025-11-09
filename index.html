@@ -3,693 +3,235 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.openai.com https://cdnjs.cloudflare.com; img-src 'self' data:;">
-  <title>LinkedIn CareerScout</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
-      min-height: 100vh;
-      padding: 20px;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    header {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    h1 {
-      color: #0a66c2;
-      font-size: 28px;
-      margin-bottom: 10px;
-    }
-    .subtitle {
-      color: #666;
-      font-size: 14px;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-      flex-wrap: wrap;
-    }
-    button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-    .btn-primary {
-      background: #0a66c2;
-      color: white;
-    }
-    .btn-primary:hover {
-      background: #004182;
-    }
-    .btn-secondary {
-      background: #e7e7e7;
-      color: #333;
-    }
-    .btn-secondary:hover {
-      background: #d0d0d0;
-    }
-    .main-content {
-      display: grid;
-      grid-template-columns: 1fr 350px;
-      gap: 20px;
-    }
-    @media (max-width: 900px) {
-      .main-content {
-        grid-template-columns: 1fr;
-      }
-    }
-    .card-stack {
-      background: white;
-      border-radius: 8px;
-      padding: 30px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      min-height: 500px;
-    }
-    .job-card {
-      border: 2px solid #e7e7e7;
-      border-radius: 8px;
-      padding: 25px;
-      margin-bottom: 20px;
-      position: relative;
-      animation: slideIn 0.3s ease-out;
-    }
-    @keyframes slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    .job-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: start;
-      margin-bottom: 15px;
-    }
-    .job-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #000;
-      margin-bottom: 5px;
-    }
-    .job-company {
-      font-size: 16px;
-      color: #0a66c2;
-      font-weight: 600;
-    }
-    .confidence-badge {
-      background: #0a66c2;
-      color: white;
-      padding: 5px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .job-meta {
-      display: flex;
-      gap: 15px;
-      margin: 10px 0;
-      font-size: 14px;
-      color: #666;
-      flex-wrap: wrap;
-    }
-    .why-section {
-      background: #f3f6f8;
-      padding: 15px;
-      border-radius: 6px;
-      margin: 15px 0;
-    }
-    .why-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #0a66c2;
-      margin-bottom: 8px;
-    }
-    .why-text {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.5;
-    }
-    .skills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin: 15px 0;
-    }
-    .skill-tag {
-      background: #e7e7e7;
-      padding: 5px 12px;
-      border-radius: 15px;
-      font-size: 12px;
-      color: #333;
-    }
-    .swipe-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-    .swipe-btn {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      min-width: 120px;
-    }
-    .btn-nope {
-      background: #f3f6f8;
-      color: #666;
-    }
-    .btn-nope:hover {
-      background: #e7e7e7;
-    }
-    .btn-interested {
-      background: #0a66c2;
-      color: white;
-    }
-    .btn-interested:hover {
-      background: #004182;
-    }
-    .btn-block {
-      background: #d32f2f;
-      color: white;
-      padding: 8px 16px;
-      font-size: 14px;
-    }
-    .btn-block:hover {
-      background: #b71c1c;
-    }
-    .reason-chips {
-      margin-top: 10px;
-      padding: 15px;
-      background: #fff;
-      border-radius: 6px;
-      border: 1px solid #e7e7e7;
-    }
-    .reason-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #666;
-      margin-bottom: 8px;
-    }
-    .reason-chip {
-      display: inline-block;
-      padding: 6px 12px;
-      margin: 4px;
-      border-radius: 15px;
-      font-size: 12px;
-      cursor: pointer;
-      border: 1px solid #e7e7e7;
-      background: white;
-      transition: all 0.2s;
-    }
-    .reason-chip:hover {
-      background: #f3f6f8;
-    }
-    .reason-chip.selected {
-      background: #0a66c2;
-      color: white;
-      border-color: #0a66c2;
-    }
-    .sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    .panel {
-      background: white;
-      border-radius: 8px;
-      padding: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .panel-title {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 15px;
-      color: #000;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 5px;
-    }
-    input, select {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #e7e7e7;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    .learned-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #e7e7e7;
-      font-size: 13px;
-    }
-    .learned-key {
-      color: #666;
-      flex: 1;
-    }
-    .learned-value {
-      font-weight: 600;
-      color: #0a66c2;
-    }
-    .learned-value.negative {
-      color: #d32f2f;
-    }
-    .metrics {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .metric-card {
-      background: #f3f6f8;
-      padding: 12px;
-      border-radius: 6px;
-      text-align: center;
-    }
-    .metric-value {
-      font-size: 24px;
-      font-weight: 700;
-      color: #0a66c2;
-    }
-    .metric-label {
-      font-size: 11px;
-      color: #666;
-      margin-top: 4px;
-    }
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: #666;
-    }
-    .empty-state h3 {
-      margin-bottom: 10px;
-      color: #333;
-    }
-    .toggle-switch {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 10px 0;
-    }
-    .switch {
-      position: relative;
-      width: 44px;
-      height: 24px;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: .4s;
-      border-radius: 24px;
-    }
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .4s;
-      border-radius: 50%;
-    }
-    input:checked + .slider {
-      background-color: #0a66c2;
-    }
-    input:checked + .slider:before {
-      transform: translateX(20px);
-    }
-    .api-key-input {
-      margin-top: 10px;
-    }
-    .privacy-note {
-      font-size: 11px;
-      color: #999;
-      margin-top: 15px;
-      padding-top: 15px;
-      border-top: 1px solid #e7e7e7;
-    }
-  </style>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.openai.com; img-src 'self' data:;">
+  <title>CareerScout - AI-Powered Career Discovery</title>
+
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>🎯 LinkedIn CareerScout</h1>
-      <p class="subtitle">AI-powered job discovery that learns what you love</p>
-      <div class="controls">
-        <button class="btn-primary" onclick="window.app.refreshJobs()">🔄 Refresh Feed</button>
-        <button class="btn-secondary" onclick="window.app.resetMemory()">🗑️ Reset Memory</button>
-        <button class="btn-secondary" onclick="window.app.toggleLearned()">📊 What We Learned</button>
-      <a href="search.html" class="btn-primary" style="text-decoration: none; display: inline-block;">
-    🔍 Search Real Jobs
-  </a>
-</div>
-    </header>
-
-    <div class="main-content">
-      <div class="card-stack" id="cardStack"></div>
-
-      <div class="sidebar">
-        <div class="panel">
-          <div class="panel-title">Your Preferences</div>
-          <div class="form-group">
-            <label>Job Titles (comma-separated)</label>
-            <input type="text" id="titles" placeholder="Product Manager, Business Analyst">
-          </div>
-          <div class="form-group">
-            <label>Locations</label>
-            <input type="text" id="locations" placeholder="New York, Remote">
-          </div>
-          <div class="form-group">
-            <label>Target Companies</label>
-            <input type="text" id="companies" placeholder="Google, Stripe">
-          </div>
-          <div class="form-group">
-            <label>Recency (days)</label>
-            <select id="recency">
-              <option value="1">Last 24 hours</option>
-              <option value="3">Last 3 days</option>
-              <option value="7">Last week</option>
-              <option value="14">Last 2 weeks</option>
-              <option value="30">Last month</option>
-            </select>
-          </div>
-          <button class="btn-primary" style="width: 100%;" onclick="window.app.saveProfile()">Save Preferences</button>
-
-          <div class="toggle-switch" style="margin-top: 20px;">
-            <label style="margin: 0;">Use Live AI</label>
-            <label class="switch">
-              <input type="checkbox" id="useLiveAI" onchange="window.app.toggleAIMode()">
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="api-key-input" id="apiKeySection" style="display: none;">
-            <input type="password" id="apiKey" placeholder="Enter OpenAI API key">
-            <p class="privacy-note">⚠️ API keys entered here are stored in browser memory only and never sent to our servers.</p>
-          </div>
-          
-          <p class="privacy-note">
-            📊 <strong>Privacy:</strong> All preferences and job interactions are stored locally in your browser. No data is sent to external servers except optional AI scoring requests.
-          </p>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <!-- Logo -->
+        <div class="header-logo">
+          <div class="header-logo-icon">🎯</div>
+          <span>CareerScout</span>
         </div>
 
-        <div class="panel">
-          <div class="panel-title">Session Metrics</div>
-          <div class="metrics">
-            <div class="metric-card">
-              <div class="metric-value" id="jobsReviewed">0</div>
-              <div class="metric-label">Jobs Reviewed</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value" id="interested">0</div>
-              <div class="metric-label">Interested</div>
-            </div>
+        <!-- Search Bar -->
+        <div class="header-search">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input
+              type="text"
+              class="search-input"
+              placeholder="Search jobs, companies, or skills..."
+              id="headerSearchInput"
+            >
           </div>
         </div>
 
-        <div class="panel" id="learnedPanel" style="display: none;">
-          <div class="panel-title">What We Learned About You</div>
-          <div id="learnedContent"></div>
-        </div>
+        <!-- Navigation -->
+        <nav class="header-nav">
+          <div class="header-nav-item active" data-page="home">
+            <span class="nav-icon">🏠</span>
+            <span>Home</span>
+          </div>
+          <div class="header-nav-item" data-page="jobs">
+            <span class="nav-icon">💼</span>
+            <span>Jobs</span>
+          </div>
+          <div class="header-nav-item" data-page="saved">
+            <span class="nav-icon">🔖</span>
+            <span>Saved</span>
+          </div>
+          <div class="header-nav-item" id="darkModeToggle">
+            <span class="nav-icon">🌙</span>
+            <span>Dark</span>
+          </div>
+          <div class="profile-icon">JD</div>
+        </nav>
       </div>
     </div>
-  </div>
+  </header>
 
-  <script>
-    // ========== LOGGER UTILITY ==========
-    const logger = {
-      log: (msg, data) => {
-        console.log(`[CareerScout] ${msg}`, data || '');
-        const logs = JSON.parse(localStorage.getItem('cs_logs') || '[]');
-        logs.push({ ts: Date.now(), msg, data });
-        if (logs.length > 50) logs.shift();
-        localStorage.setItem('cs_logs', JSON.stringify(logs));
-      },
-      error: (msg, err) => {
-        console.error(`[CareerScout ERROR] ${msg}`, err);
-        const logs = JSON.parse(localStorage.getItem('cs_logs') || '[]');
-        logs.push({ ts: Date.now(), level: 'ERROR', msg, error: err?.message });
-        localStorage.setItem('cs_logs', JSON.stringify(logs));
-      }
-    };
+  <!-- Main Content -->
+  <main class="main-wrapper">
+    <div class="container">
+      <div class="main-grid">
+        <!-- Main Feed Area -->
+        <div class="feed-area">
+          <!-- Page Title Section -->
+          <div class="card animate-fade-in">
+            <div class="card-header">
+              <div>
+                <h1 class="card-title">Your Personalized AI Career Feed</h1>
+                <p class="card-subtitle">Discover roles that perfectly match your skills and aspirations</p>
+              </div>
+              <button class="btn btn-primary" id="refreshFeedBtn">
+                <span>🔄</span>
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
 
-    // ========== MOCK JOBS DATA ==========
-    const MOCK_JOBS = [
-      { id: "j1", title: "Senior Product Manager", company: "Stripe", location: "Remote", postedDaysAgo: 2, skills: ["Product Strategy", "SQL", "API Design", "Analytics"], description: "Lead product strategy for payment APIs serving millions of businesses worldwide.", salary: "$180k-240k" },
-      { id: "j2", title: "Product Manager", company: "Atlassian", location: "New York, NY", postedDaysAgo: 1, skills: ["Agile", "JIRA", "User Research", "SQL"], description: "Drive product roadmap for collaboration tools used by Fortune 500 companies.", salary: "$160k-210k" },
-      { id: "j3", title: "Business Analyst", company: "Salesforce", location: "San Francisco, CA", postedDaysAgo: 3, skills: ["SQL", "Tableau", "Salesforce", "Excel"], description: "Analyze customer data and provide insights to drive business growth.", salary: "$110k-150k" },
-      { id: "j4", title: "Senior Business Analyst", company: "Microsoft", location: "Remote", postedDaysAgo: 4, skills: ["Power BI", "SQL", "Python", "Azure"], description: "Partner with engineering teams to optimize cloud infrastructure performance.", salary: "$140k-180k" },
-      { id: "j5", title: "Technical Product Manager", company: "Google", location: "Mountain View, CA", postedDaysAgo: 1, skills: ["APIs", "Python", "Data Analysis", "Machine Learning"], description: "Build ML-powered features for Google Search affecting billions of users.", salary: "$200k-280k" },
-      { id: "j6", title: "Product Marketing Manager", company: "HubSpot", location: "Boston, MA", postedDaysAgo: 5, skills: ["Marketing", "Analytics", "Content", "SEO"], description: "Lead go-to-market strategy for new marketing automation features.", salary: "$130k-170k" },
-      { id: "j7", title: "Data Analyst", company: "Netflix", location: "Los Gatos, CA", postedDaysAgo: 2, skills: ["SQL", "Python", "Statistics", "A/B Testing"], description: "Analyze viewer behavior to optimize content recommendations.", salary: "$120k-160k" },
-      { id: "j8", title: "Senior Software Engineer", company: "Amazon", location: "Seattle, WA", postedDaysAgo: 3, skills: ["Java", "AWS", "Distributed Systems", "Kubernetes"], description: "Build scalable services for Amazon retail platform.", salary: "$170k-230k" },
-      { id: "j9", title: "Product Manager - Payments", company: "Square", location: "Remote", postedDaysAgo: 1, skills: ["Fintech", "Product Strategy", "SQL", "APIs"], description: "Shape the future of commerce for small businesses.", salary: "$155k-205k" },
-      { id: "j10", title: "Business Intelligence Analyst", company: "Airbnb", location: "San Francisco, CA", postedDaysAgo: 6, skills: ["SQL", "Tableau", "Python", "Statistics"], description: "Generate insights on host and guest behavior to drive product decisions.", salary: "$130k-170k" },
-      { id: "j11", title: "Associate Product Manager", company: "Meta", location: "Menlo Park, CA", postedDaysAgo: 2, skills: ["Product Design", "Analytics", "SQL", "Experimentation"], description: "Early career role building social features for billions of users.", salary: "$140k-180k" },
-      { id: "j12", title: "Senior Product Manager - AI", company: "OpenAI", location: "San Francisco, CA", postedDaysAgo: 1, skills: ["AI/ML", "Product Strategy", "Python", "APIs"], description: "Lead product development for cutting-edge AI capabilities.", salary: "$220k-300k" },
-      { id: "j13", title: "Operations Analyst", company: "Uber", location: "New York, NY", postedDaysAgo: 4, skills: ["SQL", "Excel", "Analytics", "Operations"], description: "Optimize driver and rider matching algorithms in real-time.", salary: "$100k-135k" },
-      { id: "j14", title: "Product Manager - Infrastructure", company: "Databricks", location: "Remote", postedDaysAgo: 3, skills: ["Cloud", "SQL", "APIs", "Data Engineering"], description: "Build platform tools for data teams at scale.", salary: "$175k-225k" },
-      { id: "j15", title: "Business Systems Analyst", company: "Salesforce", location: "Remote", postedDaysAgo: 5, skills: ["Salesforce", "SQL", "Business Process", "Integration"], description: "Design and implement Salesforce solutions for enterprise clients.", salary: "$120k-155k" },
-      { id: "j16", title: "Senior Product Manager - Commerce", company: "Shopify", location: "Toronto, Canada", postedDaysAgo: 2, skills: ["E-commerce", "Product Strategy", "SQL", "Analytics"], description: "Empower entrepreneurs with tools to build online businesses.", salary: "$160k-210k" },
-      { id: "j17", title: "Technical Business Analyst", company: "IBM", location: "Austin, TX", postedDaysAgo: 7, skills: ["SQL", "Python", "Cloud", "Requirements Gathering"], description: "Bridge technical and business teams for enterprise software projects.", salary: "$105k-145k" },
-      { id: "j18", title: "Product Manager - Mobile", company: "Spotify", location: "Stockholm, Sweden", postedDaysAgo: 3, skills: ["Mobile", "Product Design", "Analytics", "A/B Testing"], description: "Create delightful music experiences for millions of mobile users.", salary: "$150k-195k" },
-      { id: "j19", title: "Financial Analyst", company: "Goldman Sachs", location: "New York, NY", postedDaysAgo: 4, skills: ["Excel", "Financial Modeling", "SQL", "Python"], description: "Support M&A transactions with detailed financial analysis.", salary: "$110k-150k" },
-      { id: "j20", title: "Product Manager - Platform", company: "Twilio", location: "Remote", postedDaysAgo: 2, skills: ["APIs", "Developer Tools", "SQL", "Product Strategy"], description: "Build communication APIs used by developers worldwide.", salary: "$165k-215k" }
-    ];
+          <!-- Job Cards Feed -->
+          <div id="jobFeed" class="job-feed">
+            <!-- Jobs will be dynamically inserted here -->
+          </div>
 
-    // ========== STATE MANAGEMENT ==========
-    const LS = {
-      profile: 'cs_user_profile',
-      feedback: 'cs_feedback',
-      blocks: 'cs_company_blocks',
-      prefs: 'cs_vector_prefs',
-      seen: 'cs_seen_job_ids',
-      stats: 'cs_session_stats'
-    };
+          <!-- Loading State -->
+          <div id="loadingState" class="loading" style="display: none;">
+            <div class="spinner"></div>
+          </div>
 
-    let state = {
-      userProfile: {},
-      feedback: [],
-      companyBlocks: {},
-      vectorPrefs: {},
-      seen: new Set(),
-      stats: { jobsReviewed: 0, interested: 0 },
-      currentJobs: [],
-      currentIndex: 0,
-      showingReasons: null,
-      selectedReasons: []
-    };
+          <!-- Empty State -->
+          <div id="emptyState" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">📭</div>
+            <h3 class="empty-state-title">No jobs to show</h3>
+            <p class="empty-state-text">Adjust your preferences or refresh your feed to discover new opportunities</p>
+          </div>
+        </div>
 
-    function loadMemory() {
-      try {
-        state.userProfile = JSON.parse(localStorage.getItem(LS.profile) || '{"titles":["Product Manager","Business Analyst"],"locations":["New York","Remote"],"targetCompanies":["Stripe","Atlassian"],"recencyDays":7}');
-        state.feedback = JSON.parse(localStorage.getItem(LS.feedback) || '[]');
-        state.companyBlocks = JSON.parse(localStorage.getItem(LS.blocks) || '{}');
-        state.vectorPrefs = JSON.parse(localStorage.getItem(LS.prefs) || '{}');
-        state.seen = new Set(JSON.parse(localStorage.getItem(LS.seen) || '[]'));
-        state.stats = JSON.parse(localStorage.getItem(LS.stats) || '{"jobsReviewed":0,"interested":0}');
-        logger.log('Memory loaded', { feedbackCount: state.feedback.length, prefsCount: Object.keys(state.vectorPrefs).length });
-      } catch (err) {
-        logger.error('Failed to load memory', err);
-      }
-    }
+        <!-- Sidebar -->
+        <aside class="sidebar">
+          <!-- Dark Mode Toggle Card -->
+          <div class="sidebar-card animate-fade-in">
+            <h3 class="sidebar-title">Appearance</h3>
+            <div class="dark-mode-toggle">
+              <span>☀️</span>
+              <div class="toggle-switch" id="themeToggle">
+                <div class="toggle-slider"></div>
+              </div>
+              <span>🌙</span>
+            </div>
+          </div>
 
-    function persist() {
-      try {
-        localStorage.setItem(LS.profile, JSON.stringify(state.userProfile));
-        localStorage.setItem(LS.feedback, JSON.stringify(state.feedback));
-        localStorage.setItem(LS.blocks, JSON.stringify(state.companyBlocks));
-        localStorage.setItem(LS.prefs, JSON.stringify(state.vectorPrefs));
-        localStorage.setItem(LS.seen, JSON.stringify([...state.seen]));
-        localStorage.setItem(LS.stats, JSON.stringify(state.stats));
-        logger.log('Memory persisted');
-      } catch (err) {
-        logger.error('Failed to persist memory', err);
-      }
-    }
+          <!-- Preferences Card -->
+          <div class="sidebar-card animate-fade-in">
+            <h3 class="sidebar-title">Your Preferences</h3>
 
-    // ========== VECTOR HELPERS ==========
-    function addWeight(key, delta) {
-      state.vectorPrefs[key] = (state.vectorPrefs[key] || 0) + delta;
-    }
+            <div class="form-group">
+              <label class="form-label">Job Titles</label>
+              <input
+                type="text"
+                class="form-input"
+                id="jobTitlesInput"
+                placeholder="Product Manager, Business Analyst"
+              >
+            </div>
 
-    function decayPrefs(factor = 0.99) {
-      for (const k in state.vectorPrefs) {
-        state.vectorPrefs[k] *= factor;
-      }
-    }
+            <div class="form-group">
+              <label class="form-label">Locations</label>
+              <input
+                type="text"
+                class="form-input"
+                id="locationsInput"
+                placeholder="New York, Remote"
+              >
+            </div>
 
-    function companyPenalty(company) {
-      return (state.companyBlocks[company.toLowerCase()] || 0) * 1.0;
-    }
+            <div class="form-group">
+              <label class="form-label">Companies</label>
+              <input
+                type="text"
+                class="form-input"
+                id="companiesInput"
+                placeholder="Google, Stripe, Meta"
+              >
+            </div>
 
-    // ========== AI SCORING ==========
-    function mockSummarizeAndScore(job, profile) {
-      let score = 0.5;
-      let signals = [];
-      let summary = "";
+            <div class="form-group">
+              <label class="form-label">Job Recency</label>
+              <select class="form-select" id="recencySelect">
+                <option value="1">Last 24 hours</option>
+                <option value="3">Last 3 days</option>
+                <option value="7" selected>Last week</option>
+                <option value="14">Last 2 weeks</option>
+                <option value="30">Last month</option>
+              </select>
+            </div>
 
-      const titleLower = job.title.toLowerCase();
-      const profileTitles = (profile.titles || []).map(t => t.toLowerCase());
-      
-      let titleMatch = false;
-      for (const pt of profileTitles) {
-        if (titleLower.includes(pt) || pt.includes(titleLower.split(' - ')[0])) {
-          score += 0.25;
-          signals.push(`title:${pt}`);
-          titleMatch = true;
-          break;
-        }
-      }
+            <button class="btn btn-primary btn-block" id="savePreferencesBtn">
+              Save Preferences
+            </button>
+          </div>
 
-      const jobLoc = (job.location || "").toLowerCase();
-      const profileLocs = (profile.locations || []).map(l => l.toLowerCase());
-      for (const pl of profileLocs) {
-        if (jobLoc.includes(pl) || pl.includes(jobLoc)) {
-          score += 0.15;
-          signals.push(`location:${pl}`);
-          break;
-        }
-      }
+          <!-- Session Metrics Card -->
+          <div class="sidebar-card animate-fade-in">
+            <h3 class="sidebar-title">Session Metrics</h3>
+            <div class="metrics-grid">
+              <div class="metric-item">
+                <div class="metric-value" id="jobsReviewed">0</div>
+                <div class="metric-label">Reviewed</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-value" id="jobsSaved">0</div>
+                <div class="metric-label">Saved</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-value" id="jobsApplied">0</div>
+                <div class="metric-label">Applied</div>
+              </div>
+              <div class="metric-item">
+                <div class="metric-value" id="matchRate">0%</div>
+                <div class="metric-label">Match Rate</div>
+              </div>
+            </div>
+          </div>
 
-      const companyLower = job.company.toLowerCase();
-      const targetCompanies = (profile.targetCompanies || []).map(c => c.toLowerCase());
-      if (targetCompanies.some(tc => companyLower.includes(tc) || tc.includes(companyLower))) {
-        score += 0.2;
-        signals.push(`company:${companyLower}`);
-      }
+          <!-- AI Settings Card -->
+          <div class="sidebar-card animate-fade-in">
+            <h3 class="sidebar-title">AI Settings</h3>
 
-      (job.skills || []).forEach(skill => {
-        signals.push(`skill:${skill.toLowerCase()}`);
-      });
+            <div class="dark-mode-toggle mb-md">
+              <span style="font-size: 0.9rem; color: var(--text-secondary);">Use Live AI</span>
+              <div class="toggle-switch" id="aiToggle">
+                <div class="toggle-slider"></div>
+              </div>
+            </div>
 
-      if (job.postedDaysAgo <= 3) {
-        score += 0.1;
-      }
+            <div id="apiKeySection" style="display: none;">
+              <div class="form-group">
+                <label class="form-label">OpenAI API Key</label>
+                <input
+                  type="password"
+                  class="form-input"
+                  id="apiKeyInput"
+                  placeholder="sk-..."
+                >
+              </div>
+              <p style="font-size: 0.75rem; color: var(--text-tertiary);">
+                🔒 Your API key is stored locally and never sent to our servers
+              </p>
+            </div>
+          </div>
 
-      if (titleMatch) {
-        summary = `Strong match for ${job.title} role. `;
-      } else {
-        summary = `${job.title} position. `;
-      }
-      
-      if (targetCompanies.some(tc => companyLower.includes(tc))) {
-        summary += `${job.company} is one of your target companies. `;
-      }
-      
-      summary += `Posted ${job.postedDaysAgo} day${job.postedDaysAgo !== 1 ? 's' : ''} ago. `;
-      
-      if (job.skills && job.skills.length > 0) {
-        summary += `Key skills: ${job.skills.slice(0, 3).join(', ')}.`;
-      }
+          <!-- Quick Actions -->
+          <div class="sidebar-card animate-fade-in">
+            <h3 class="sidebar-title">Quick Actions</h3>
+            <button class="btn btn-secondary btn-block mb-sm" id="resetMemoryBtn">
+              <span>🗑️</span>
+              <span>Reset Memory</span>
+            </button>
+            <a href="search.html" class="btn btn-outline btn-block">
+              <span>🔍</span>
+              <span>Search Real Jobs</span>
+            </a>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
 
-      return {
-        summary: summary.trim(),
-        score: Math.min(1, Math.max(0, score)),
-        signals
-      };
-    }
-
-    async function liveSummarizeAndScore(job, profile) {
-      const apiKey = document.getElementById('apiKey').value.trim();
-      if (!apiKey) {
-        alert('Please enter an OpenAI API key to use Live AI mode');
-        return mockSummarizeAndScore(job, profile);
-      }
-
-      try {
-        const prompt = `You are a job-match rater. Score how well a job fits a user profile.
-Return strict JSON: {"summary": "...", "score": 0..1, "signals": ["skill:sql","title:product manager",...]}
-Consider title match, seniority match, skills overlap, company & location preferences, posting recency.
-
-User Profile:
-${JSON.stringify(profile, null, 2)}
-
-Job:
-${JSON.stringify({
-  title: job.title,
-  company: job.company,
-  location: job.location,
-  skills: job.skills,
-  description: job.description,
-  postedDaysAgo: job.postedDaysAgo
-}, null, 2)}`;
-
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: 'gpt-3.5-turbo',
-            messages: [{role: 'user', content: prompt}],
-            temperature: 0.3
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}`);
-        }
-
-        const data = await response.json();
-        const result = JSON.parse(data.choices[0].message.content);
-        logger.log('Live AI scored job', { jobId: job.id, score: result.score });
-        return result;
-      } catch (error) {
-        logger.error('Live AI failed, falling back to mock', error);
-        return mockSummarizeAndScore(job, profile);
-      }
-    }
-
-    // ========== RANKING ==========
-    function scoreJob(job) {
-      const w = { llm: 0.5, vec: 0.2, rec: 0.15, eng: 0.1, block: 1.0 };
-      
-      const llm = job.mockLLMScore || 0.5;
-      
-      const titleKey = `title:${job.title.toLowerCase()}`;
-      const companyKey = `company:${job.company.toLowerCase()}`;
-      const locKey = `location:${(job.location || '').toLowerCase()}`;
-      
-      let vec = (state.vectorPrefs[titleKey] || 0) +
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -4,47 +4,242 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Job Search - CareerScout</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  
+
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+
   <style>
-    body {
-      background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
+    .search-page-wrapper {
+      background: var(--bg-gradient);
       min-height: 100vh;
+      padding: var(--spacing-lg);
     }
-    .loading-spinner {
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #0a66c2;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
+
+    .search-header-card {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-lg);
+      box-shadow: var(--shadow-lg);
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+
+    .search-header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .search-form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-md);
+    }
+
+    .search-form-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: var(--spacing-md);
+    }
+
+    .search-results-card {
+      background: var(--bg-primary);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .job-result-item {
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+      transition: all var(--transition-base);
+      background: var(--bg-primary);
+    }
+
+    .job-result-item:hover {
+      border-color: var(--primary-blue);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .job-result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .job-result-info {
+      flex: 1;
+    }
+
+    .job-result-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .job-result-company {
+      font-size: 0.95rem;
+      color: var(--primary-blue);
+      font-weight: 600;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .job-result-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .job-result-actions {
+      display: flex;
+      gap: var(--spacing-sm);
+    }
+
+    @media (max-width: 768px) {
+      .search-form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .search-header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-md);
+      }
+
+      .job-result-header {
+        flex-direction: column;
+      }
+
+      .job-result-actions {
+        width: 100%;
+        margin-top: var(--spacing-md);
+      }
+
+      .job-result-actions .btn {
+        flex: 1;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="max-w-7xl mx-auto p-6">
-    <header class="bg-white rounded-lg shadow-lg p-6 mb-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-3xl font-bold text-blue-600">🔍 Job Search</h1>
-          <p class="text-gray-600 mt-1">Search real-time jobs from thousands of sources</p>
+  <div class="search-page-wrapper">
+    <div class="container">
+      <!-- Header Card -->
+      <div class="search-header-card animate-fade-in">
+        <div class="search-header-top">
+          <div>
+            <h1 style="color: var(--primary-blue); font-size: 1.75rem; margin-bottom: 4px;">🔍 Real-Time Job Search</h1>
+            <p style="color: var(--text-secondary); font-size: 0.95rem;">Search thousands of jobs from top companies</p>
+          </div>
+          <a href="index.html" class="btn btn-secondary">
+            <span>←</span>
+            <span>Back to CareerScout</span>
+          </a>
         </div>
-        <a href="index.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-          ← Back to CareerScout
-        </a>
-      </div>
-    </header>
 
-    <div id="jsearch-root"></div>
+        <!-- Search Form -->
+        <form id="searchForm">
+          <div class="search-form-grid">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Job Title / Keywords</label>
+              <input
+                type="text"
+                class="form-input"
+                id="queryInput"
+                placeholder="e.g., Product Manager, Software Engineer"
+                value=""
+              >
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Location</label>
+              <input
+                type="text"
+                class="form-input"
+                id="locationInput"
+                placeholder="e.g., New York, NY"
+                value=""
+              >
+            </div>
+          </div>
+
+          <div class="search-form-row" style="margin-top: var(--spacing-md);">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">Search Radius</label>
+              <select class="form-select" id="radiusSelect">
+                <option value="25">25 miles</option>
+                <option value="50">50 miles</option>
+                <option value="100">100 miles</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">&nbsp;</label>
+              <div style="display: flex; align-items: center; padding: 10px 0;">
+                <input type="checkbox" id="remoteOnlyCheckbox" style="width: auto; margin-right: 8px;">
+                <label for="remoteOnlyCheckbox" style="margin: 0; font-weight: 600; cursor: pointer;">Remote Only</label>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label">&nbsp;</label>
+              <button type="submit" class="btn btn-primary btn-block">
+                <span>🔍</span>
+                <span>Search Jobs</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="loading" style="display: none; background: var(--bg-primary); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);">
+        <div>
+          <div class="spinner"></div>
+          <p style="margin-top: var(--spacing-md); color: var(--text-secondary);">Searching for jobs...</p>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div id="errorState" style="display: none;">
+        <div style="background: var(--error-red-light); border-left: 4px solid var(--error-red); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
+          <h3 style="color: var(--error-red); margin-bottom: var(--spacing-sm);">⚠️ Search Error</h3>
+          <p id="errorMessage" style="color: var(--gray-700);"></p>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="resultsContainer" style="display: none;">
+        <div class="search-results-card animate-fade-in">
+          <div style="margin-bottom: var(--spacing-lg); padding-bottom: var(--spacing-md); border-bottom: 1px solid var(--gray-200);">
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">
+              Found <span id="resultsCount">0</span> Jobs
+            </h2>
+          </div>
+
+          <div id="jobResults">
+            <!-- Results will be inserted here -->
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
-    // ========== INLINE WIDGET CODE ==========
+    // ========== STATE ==========
     let state = {
       query: '',
       location: '',
@@ -53,13 +248,10 @@
       loading: false,
       error: null,
       results: [],
-      lastRequestUrl: '',
-      // Direct RapidAPI configuration
-      apiKey: '07a7dbe8f3msh3e7142e5f6f14cfp18e3cfjsn3b5e328da4fb',
-      apiHost: 'jsearch.p.rapidapi.com',
-      apiUrl: 'https://jsearch.p.rapidapi.com/search'
+      apiBase: 'https://careerscout.onrender.com/api'
     };
 
+    // ========== UTILITIES ==========
     function formatDate(dateString) {
       if (!dateString) return 'N/A';
       try {
@@ -67,7 +259,7 @@
         const now = new Date();
         const diffTime = Math.abs(now - date);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
+
         if (diffDays === 0) return 'Today';
         if (diffDays === 1) return 'Yesterday';
         if (diffDays < 7) return `${diffDays} days ago`;
@@ -82,26 +274,27 @@
     function formatSalary(job) {
       const min = job.job_min_salary;
       const max = job.job_max_salary;
-      
+
       if (!min && !max) return 'Not specified';
-      
+
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       });
-      
+
       if (min && max) return `${formatter.format(min)} - ${formatter.format(max)}/year`;
       if (min) return `${formatter.format(min)}+/year`;
       return `Up to ${formatter.format(max)}/year`;
     }
 
+    // ========== API ==========
     async function searchJobs() {
       state.loading = true;
       state.error = null;
       state.results = [];
-      render();
+      updateUI();
 
       const params = new URLSearchParams({
         query: state.query || 'software engineer',
@@ -116,17 +309,10 @@
         params.set('radius', state.radius);
       }
 
-      const url = `${state.apiUrl}?${params.toString()}`;
-      state.lastRequestUrl = url;
+      const url = `${state.apiBase}/jsearch?${params.toString()}`;
 
       try {
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'x-rapidapi-key': state.apiKey,
-            'x-rapidapi-host': state.apiHost
-          }
-        });
+        const response = await fetch(url);
 
         if (!response.ok) {
           if (response.status === 429) {
@@ -147,117 +333,101 @@
         console.error('Search error:', err);
       } finally {
         state.loading = false;
-        render();
+        updateUI();
       }
     }
 
-    function render() {
-      const root = document.getElementById('jsearch-root');
-      if (!root) return;
-      
-      root.innerHTML = `
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <form id="search-form" class="space-y-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Job Title / Keywords</label>
-                <input type="text" id="query" value="${state.query}" placeholder="e.g., Product Manager"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-              </div>
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Location</label>
-                <input type="text" id="location" value="${state.location}" placeholder="e.g., New York, NY"
-                  ${state.remoteOnly ? 'disabled' : ''}
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${state.remoteOnly ? 'bg-gray-100' : ''}">
-              </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Radius (miles)</label>
-                <select id="radius" ${state.remoteOnly ? 'disabled' : ''}
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg ${state.remoteOnly ? 'bg-gray-100' : ''}">
-                  <option value="25" ${state.radius === '25' ? 'selected' : ''}>25 miles</option>
-                  <option value="50" ${state.radius === '50' ? 'selected' : ''}>50 miles</option>
-                  <option value="100" ${state.radius === '100' ? 'selected' : ''}>100 miles</option>
-                </select>
-              </div>
-              <div class="flex items-end">
-                <label class="flex items-center cursor-pointer">
-                  <input type="checkbox" id="remoteOnly" ${state.remoteOnly ? 'checked' : ''}
-                    class="w-5 h-5 text-blue-600 border-gray-300 rounded">
-                  <span class="ml-2 text-sm font-semibold text-gray-700">Remote Only</span>
-                </label>
-              </div>
-              <div class="flex items-end">
-                <button type="submit" class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">
-                  🔍 Search Jobs
-                </button>
-              </div>
-            </div>
-          </form>
-        </div>
-        
-        ${state.loading ? '<div class="bg-white rounded-lg shadow-lg p-8 text-center"><div class="loading-spinner"></div><p class="text-gray-600 mt-4">Searching...</p></div>' : ''}
-        ${state.error ? `<div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg"><p class="text-red-700">${state.error}</p></div>` : ''}
-        ${state.results.length > 0 ? renderResults() : ''}
-      `;
-      
-      attachEventListeners();
+    // ========== RENDER ==========
+    function updateUI() {
+      const loadingEl = document.getElementById('loadingState');
+      const errorEl = document.getElementById('errorState');
+      const resultsEl = document.getElementById('resultsContainer');
+
+      // Hide all states
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'none';
+      resultsEl.style.display = 'none';
+
+      if (state.loading) {
+        loadingEl.style.display = 'flex';
+        return;
+      }
+
+      if (state.error) {
+        errorEl.style.display = 'block';
+        document.getElementById('errorMessage').textContent = state.error;
+        return;
+      }
+
+      if (state.results.length > 0) {
+        resultsEl.style.display = 'block';
+        renderResults();
+      }
     }
 
     function renderResults() {
-      return `
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <h2 class="text-2xl font-bold text-gray-800 mb-4">Found ${state.results.length} Jobs</h2>
-          <div class="space-y-4">
-            ${state.results.map(job => `
-              <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                <div class="flex justify-between items-start">
-                  <div class="flex-1">
-                    <h3 class="text-lg font-bold text-gray-900">${job.job_title}</h3>
-                    <p class="text-blue-600 font-semibold">${job.employer_name}</p>
-                    <p class="text-sm text-gray-600 mt-1">
-                      ${job.job_is_remote ? '🌐 Remote' : `📍 ${job.job_city || ''}, ${job.job_state || ''}`}
-                      • ${formatDate(job.job_posted_at_datetime_utc)}
-                    </p>
-                    <p class="text-sm font-medium text-green-700 mt-1">${formatSalary(job)}</p>
-                  </div>
-                  <div class="ml-4">
-                    ${job.job_apply_link ? `<a href="${job.job_apply_link}" target="_blank" 
-                      class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Apply</a>` : ''}
-                  </div>
-                </div>
+      document.getElementById('resultsCount').textContent = state.results.length;
+
+      const jobResultsEl = document.getElementById('jobResults');
+      jobResultsEl.innerHTML = state.results.map(job => `
+        <div class="job-result-item">
+          <div class="job-result-header">
+            <div class="job-result-info">
+              <h3 class="job-result-title">${job.job_title}</h3>
+              <div class="job-result-company">${job.employer_name}</div>
+              <div class="job-result-meta">
+                <span>${job.job_is_remote ? '🌐 Remote' : `📍 ${job.job_city || ''}, ${job.job_state || ''}`}</span>
+                <span>⏰ ${formatDate(job.job_posted_at_datetime_utc)}</span>
+                <span>💰 ${formatSalary(job)}</span>
+                ${job.job_employment_type ? `<span>💼 ${job.job_employment_type}</span>` : ''}
               </div>
-            `).join('')}
+            </div>
+            <div class="job-result-actions">
+              ${job.job_apply_link ? `
+                <a href="${job.job_apply_link}" target="_blank" class="btn btn-primary btn-sm">
+                  Apply
+                </a>
+              ` : ''}
+              ${job.job_google_link ? `
+                <a href="${job.job_google_link}" target="_blank" class="btn btn-outline btn-sm">
+                  Details
+                </a>
+              ` : ''}
+            </div>
           </div>
         </div>
-      `;
+      `).join('');
     }
 
-    function attachEventListeners() {
-      const form = document.getElementById('search-form');
-      if (form) {
-        form.addEventListener('submit', (e) => {
-          e.preventDefault();
-          state.query = document.getElementById('query').value;
-          state.location = document.getElementById('location').value;
-          state.radius = document.getElementById('radius').value;
-          state.remoteOnly = document.getElementById('remoteOnly').checked;
-          searchJobs();
-        });
-      }
-      
-      const remoteCheckbox = document.getElementById('remoteOnly');
-      if (remoteCheckbox) {
-        remoteCheckbox.addEventListener('change', (e) => {
-          state.remoteOnly = e.target.checked;
-          render();
-        });
-      }
-    }
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('searchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.query = document.getElementById('queryInput').value;
+      state.location = document.getElementById('locationInput').value;
+      state.radius = document.getElementById('radiusSelect').value;
+      state.remoteOnly = document.getElementById('remoteOnlyCheckbox').checked;
+      searchJobs();
+    });
 
-    // Initialize
-    render();
+    document.getElementById('remoteOnlyCheckbox').addEventListener('change', (e) => {
+      const locationInput = document.getElementById('locationInput');
+      const radiusSelect = document.getElementById('radiusSelect');
+
+      if (e.target.checked) {
+        locationInput.disabled = true;
+        radiusSelect.disabled = true;
+        locationInput.style.background = 'var(--gray-100)';
+        radiusSelect.style.background = 'var(--gray-100)';
+      } else {
+        locationInput.disabled = false;
+        radiusSelect.disabled = false;
+        locationInput.style.background = '';
+        radiusSelect.style.background = '';
+      }
+    });
+
+    // ========== INIT ==========
+    console.log('✅ Search page ready');
   </script>
 </body>
 </html>

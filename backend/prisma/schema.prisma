@@ -1,0 +1,95 @@
+// Prisma schema for CareerScout Feed App
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Core role/job posting
+model Role {
+  id           String         @id @default(cuid())
+  title        String
+  company      String
+  location     String?
+  tags         String[]       // e.g., ["salesforce","ai","fintech","pm"]
+  description  String?
+  createdAt    DateTime       @default(now())
+
+  feedback     RoleFeedback[]
+
+  @@index([company])
+  @@index([createdAt])
+}
+
+// User feedback on roles (Like/Dislike)
+model RoleFeedback {
+  id           String          @id @default(cuid())
+  userId       String
+  roleId       String
+  value        FeedbackValue   // LIKE | DISLIKE
+  reason       DislikeReason?  // optional, only for DISLIKE
+  createdAt    DateTime        @default(now())
+
+  role         Role            @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+  @@index([userId, createdAt])
+}
+
+enum FeedbackValue {
+  LIKE
+  DISLIKE
+}
+
+enum DislikeReason {
+  not_relevant
+  too_senior
+  too_junior
+  location_mismatch
+  compensation
+  company_fit
+}
+
+// User profile from onboarding
+model UserProfile {
+  userId       String   @id
+  interests    String[] // tags: salesforce, ai, fintech, etc.
+  seniority    String?  // IC, Senior IC, Lead/Manager
+  locations    String[] // ["Remote", "Chicago", ...]
+  companyTypes String[] // startup, scaleup, public, FAANG-like, consulting
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// Append-only signal log for tracking user behavior
+model UserSignal {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "LIKE","DISLIKE","VIEW","DWELL","REFRESH","ONBOARDING_SET"
+  payload   Json     // flexible JSON for type-specific data
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, type])
+  @@index([userId, createdAt])
+}
+
+// Computed insights about user preferences
+model UserInsight {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String   // "Leans toward Salesforce + AI roles"
+  detail    String   // "7 likes in last 20 views; dislikes cite 'too junior'"
+  weight    Int      // importance 1-5
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([userId, weight])
+}
