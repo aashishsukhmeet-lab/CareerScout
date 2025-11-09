@@ -4,9 +4,16 @@ import profileRoutes from './routes/profile';
 import rolesRoutes from './routes/roles';
 import feedRoutes from './routes/feed';
 import insightsRoutes from './routes/insights';
+import searchRoutes from './routes/search';
+import { validateConfig } from './utils/config';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Validate RapidAPI configuration on startup
+if (process.env.NODE_ENV !== 'test') {
+  validateConfig();
+}
 
 // Middleware
 app.use(cors());
@@ -22,6 +29,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/feed', feedRoutes);
 app.use('/api/insights', insightsRoutes);
+app.use('/api/jobs/search', searchRoutes);
 
 // 404 handler
 app.use((req, res) => {

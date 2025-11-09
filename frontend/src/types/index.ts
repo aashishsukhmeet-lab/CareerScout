@@ -65,3 +65,45 @@ export interface FeedbackRequest {
   value: FeedbackValue;
   reason?: DislikeReason;
 }
+
+// Job Search Types
+export interface JobPosting {
+  id: string;
+  title: string;
+  company: string;
+  location: string;
+  remote: boolean;
+  postedAt: string;
+  descriptionSnippet: string;
+  source: string;
+  applyUrl: string;
+  salary?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+    period?: 'year' | 'month' | 'hour';
+  };
+  tags?: string[];
+  raw?: unknown;
+}
+
+export interface SearchResponse {
+  items: JobPosting[];
+  page: number;
+  nextPage?: number;
+  totalApprox?: number;
+  cached?: boolean;
+  meta: {
+    provider: string;
+    generatedAt: string;
+  };
+}
+
+export interface SearchParams {
+  q: string;
+  page?: number;
+  location?: string;
+  remote?: boolean;
+  employmentType?: string[];
+  postedSinceDays?: number;
+}

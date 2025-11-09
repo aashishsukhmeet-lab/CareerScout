@@ -4,6 +4,8 @@ import {
   UserProfile,
   OnboardingData,
   FeedbackRequest,
+  SearchResponse,
+  SearchParams,
 } from '../types';
 
 const API_BASE = '/api';
@@ -64,4 +66,21 @@ export const api = {
     fetchJSON('/insights/reset', {
       method: 'POST',
     }),
+
+  // Job Search
+  searchJobs: (params: SearchParams) => {
+    const query = new URLSearchParams();
+    query.set('q', params.q);
+    if (params.page) query.set('page', params.page.toString());
+    if (params.location) query.set('location', params.location);
+    if (params.remote !== undefined) query.set('remote', params.remote.toString());
+    if (params.employmentType?.length) {
+      query.set('employmentType', params.employmentType.join(','));
+    }
+    if (params.postedSinceDays) {
+      query.set('postedSinceDays', params.postedSinceDays.toString());
+    }
+
+    return fetchJSON<SearchResponse>(`/jobs/search?${query}`);
+  },
 };
