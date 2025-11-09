@@ -15,7 +15,7 @@ CORS(app, resources={
 })
 
 # Your friend's RapidAPI key (we'll move this to environment variable later)
-RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY', '3cf0995c9bmshc6363b8b9398e33p1492a5jsnfa7ab9525f41')
+RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY', '07a7dbe8f3msh3e7142e5f6f14cfp18e3cfjsn3b5e328da4fb')
 
 @app.route('/', methods=['GET'])
 def home():
