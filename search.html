@@ -59,6 +59,15 @@
       box-shadow: var(--shadow-md);
       transform: translateY(-2px);
     }
+    .job-result-item.liked {
+      border-color: #10b981;
+      background-color: #f0fdf4;
+    }
+    .job-result-item.disliked {
+      border-color: #ef4444;
+      background-color: #fef2f2;
+      opacity: 0.7;
+    }
     .job-result-header {
       display: flex;
       justify-content: space-between;
@@ -90,6 +99,7 @@
     .job-result-actions {
       display: flex;
       gap: var(--spacing-sm);
+      flex-wrap: wrap;
     }
     .save-button {
       transition: all 0.2s ease;
@@ -98,6 +108,41 @@
       background-color: var(--success-green);
       color: white;
       border-color: var(--success-green);
+    }
+    .feedback-buttons {
+      display: flex;
+      gap: var(--spacing-xs);
+      padding: 4px;
+      background: var(--gray-100);
+      border-radius: 6px;
+    }
+    .feedback-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 1.2rem;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .feedback-btn:hover {
+      background: white;
+      transform: scale(1.1);
+    }
+    .feedback-btn.active-like {
+      background: #10b981;
+      color: white;
+    }
+    .feedback-btn.active-dislike {
+      background: #ef4444;
+      color: white;
+    }
+    .feedback-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
     @media (max-width: 768px) {
       .search-form-row {
@@ -226,9 +271,10 @@
       error: null,
       results: [],
       savedJobs: new Set(JSON.parse(localStorage.getItem('searchPageSavedJobs') || '[]')),
+      likedJobs: new Set(JSON.parse(localStorage.getItem('searchPageLikedJobs') || '[]')),
+      dislikedJobs: new Set(JSON.parse(localStorage.getItem('searchPageDislikedJobs') || '[]')),
       apiBase: 'https://careerscout.onrender.com/api'
     };
-
     // ========== UTILITIES ==========
     function saveSavedJobs() {
       try {
@@ -237,7 +283,20 @@
         console.error('Failed to save to localStorage:', e);
       }
     }
-
+    function saveLikedJobs() {
+      try {
+        localStorage.setItem('searchPageLikedJobs', JSON.stringify(Array.from(state.likedJobs)));
+      } catch (e) {
+        console.error('Failed to save liked jobs to localStorage:', e);
+      }
+    }
+    function saveDislikedJobs() {
+      try {
+        localStorage.setItem('searchPageDislikedJobs', JSON.stringify(Array.from(state.dislikedJobs)));
+      } catch (e) {
+        console.error('Failed to save disliked jobs to localStorage:', e);
+      }
+    }
     function formatDate(dateString) {
       if (!dateString) return 'N/A';
       try {
@@ -255,7 +314,6 @@
         return dateString;
       }
     }
-
     function formatSalary(job) {
       const min = job.job_min_salary;
       const max = job.job_max_salary;
@@ -270,7 +328,6 @@
       if (min) return `${formatter.format(min)}+/year`;
       return `Up to ${formatter.format(max)}/year`;
     }
-
     // ========== MOCK ANALYSIS FUNCTIONS ==========
     function generateBadge(label, rating, color) {
       return `
@@ -279,12 +336,10 @@
         </span>
       `;
     }
-
     function getCompanyAnalysis(companyName) {
       const hash = companyName.length % 5;
       let financials, workLife, growthOpp;
       let financialsColor, workLifeColor, growthOppColor;
-
       if (hash === 0) { // Stable/Large companies
         financials = 'Stable (↑)'; financialsColor = '#057642';
         workLife = '4.1/5 (High)'; workLifeColor = '#0A66C2';
@@ -306,7 +361,6 @@
         workLife = 'N/A'; workLifeColor = '#666666';
         growthOpp = 'N/A'; growthOppColor = '#666666';
       }
-
       return `
         <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--gray-200);">
           ${generateBadge('Company Financials', financials, financialsColor)}
@@ -318,7 +372,6 @@
         </div>
       `;
     }
-
     function generateProspectReport(job) {
       const company = job.company || job.employer_name || 'Unknown Company';
       const title = job.title || job.job_title;
@@ -326,7 +379,6 @@
       
       const hash = company.length % 5;
       let financials, workLife, growthOpp, emphasis;
-
       if (hash === 0) { // Stable/Large
         financials = 'Stable (Revenue ↑, EBITDA ↑). Strong financial footing.';
         workLife = 'High (4.1/5). Excellent balance, but may have slow promotion cycles.';
@@ -364,42 +416,34 @@
           'Show how your skills directly **support the company\'s current stated goals**.',
         ];
       }
-
       const report = `
 ==================================================
 📊 Job Prospect Report for: ${title} at ${company}
 ==================================================
-
 1. ORGANIZATIONAL HEALTH & PROSPECTS
 ----------------------------------------
 - Company Financials (Revenue/EBITDA Trend): ${financials}
 - Quality of Work Life (Employee Happiness): ${workLife}
 - Growth Opportunity (Career Trajectory): ${growthOpp}
-
 2. APPLICATION STRATEGY & BOOSTERS
 ----------------------------------------
 To maximize your interview chances, you should:
-
 * **What to Emphasize (Keywords & Skills):**
     - ${emphasis.join('\n    - ')}
-
 * **Suggestions to Boost Chances (AI Coaching):**
     - **Customization:** Tailor your resume summary to include 3 keywords explicitly mentioned in the job description.
     - **Research:** Mention a recent company win, product launch, or industry challenge in your cover letter to show genuine interest.
     - **Networking:** Find and reach out to one current employee in a similar role via LinkedIn for an informational interview.
-
 ==================================================
       `.trim();
       return report;
     }
-
     function handleReport(jobId) {
       const job = state.results.find(j => (j.id || j.job_id) === jobId);
       if (!job) return;
       const report = generateProspectReport(job);
       alert(report);
     }
-
     // ========== SAVE LOGIC ==========
     function toggleSave(jobId) {
       if (state.savedJobs.has(jobId)) {
@@ -412,7 +456,49 @@ To maximize your interview chances, you should:
       saveSavedJobs();
       renderResults();
     }
-
+    // ========== LIKE/DISLIKE LOGIC ==========
+    function toggleLike(jobId) {
+      const wasLiked = state.likedJobs.has(jobId);
+      const wasDisliked = state.dislikedJobs.has(jobId);
+      
+      if (wasLiked) {
+        // Unlike
+        state.likedJobs.delete(jobId);
+        showToast('Removed like', 'info');
+      } else {
+        // Like (remove dislike if it exists)
+        if (wasDisliked) {
+          state.dislikedJobs.delete(jobId);
+          saveDislikedJobs();
+        }
+        state.likedJobs.add(jobId);
+        showToast('Job liked! 👍', 'success');
+      }
+      
+      saveLikedJobs();
+      renderResults();
+    }
+    function toggleDislike(jobId) {
+      const wasDisliked = state.dislikedJobs.has(jobId);
+      const wasLiked = state.likedJobs.has(jobId);
+      
+      if (wasDisliked) {
+        // Remove dislike
+        state.dislikedJobs.delete(jobId);
+        showToast('Removed dislike', 'info');
+      } else {
+        // Dislike (remove like if it exists)
+        if (wasLiked) {
+          state.likedJobs.delete(jobId);
+          saveLikedJobs();
+        }
+        state.dislikedJobs.add(jobId);
+        showToast('Job disliked', 'info');
+      }
+      
+      saveDislikedJobs();
+      renderResults();
+    }
     function showToast(message, type = 'info') {
       let toast = document.getElementById('toast');
       
@@ -430,14 +516,12 @@ To maximize your interview chances, you should:
         toast.classList.remove('show');
       }, 4000);
     }
-
     // ========== API ==========
     async function searchJobs() {
       state.loading = true;
       state.error = null;
       state.results = [];
       updateUI();
-
       const params = new URLSearchParams({
         query: state.query || 'software engineer',
         page: '1',
@@ -445,14 +529,11 @@ To maximize your interview chances, you should:
         date_posted: 'all',
         remote_jobs_only: state.remoteOnly ? 'true' : 'false'
       });
-
       if (state.location && !state.remoteOnly) {
         params.set('location', state.location);
         params.set('radius', state.radius);
       }
-
       const url = `https://jsearch.p.rapidapi.com/search?${params.toString()}`;
-
       try {
         const response = await fetch(url, {
           method: 'GET',
@@ -461,16 +542,13 @@ To maximize your interview chances, you should:
             'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
           }
         });
-
         if (!response.ok) {
           if (response.status === 429) {
             throw new Error('Rate limit exceeded. Please try again in a few minutes.');
           }
           throw new Error(`API Error (${response.status})`);
         }
-
         const data = await response.json();
-
         if (data.status === 'OK' && data.data) {
           state.results = data.data;
         } else {
@@ -484,34 +562,28 @@ To maximize your interview chances, you should:
         updateUI();
       }
     }
-
     // ========== RENDER ==========
     function updateUI() {
       const loadingEl = document.getElementById('loadingState');
       const errorEl = document.getElementById('errorState');
       const resultsEl = document.getElementById('resultsContainer');
-
       loadingEl.style.display = 'none';
       errorEl.style.display = 'none';
       resultsEl.style.display = 'none';
-
       if (state.loading) {
         loadingEl.style.display = 'flex';
         return;
       }
-
       if (state.error) {
         errorEl.style.display = 'block';
         document.getElementById('errorMessage').textContent = state.error;
         return;
       }
-
       if (state.results.length > 0) {
         resultsEl.style.display = 'block';
         renderResults();
       }
     }
-
     function renderResults() {
       document.getElementById('resultsCount').textContent = state.results.length;
       const jobResultsEl = document.getElementById('jobResults');
@@ -519,11 +591,18 @@ To maximize your interview chances, you should:
       jobResultsEl.innerHTML = state.results.map(job => {
         const jobId = job.id || job.job_id || `temp-${Math.random()}`;
         const isSaved = state.savedJobs.has(jobId);
+        const isLiked = state.likedJobs.has(jobId);
+        const isDisliked = state.dislikedJobs.has(jobId);
         const companyName = job.company || job.employer_name || 'Unknown Company';
         const analysisHtml = getCompanyAnalysis(companyName);
-
+        
+        // Add class to job item based on feedback
+        let itemClass = 'job-result-item';
+        if (isLiked) itemClass += ' liked';
+        if (isDisliked) itemClass += ' disliked';
+        
         return `
-          <div class="job-result-item">
+          <div class="${itemClass}">
             <div class="job-result-header">
               <div class="job-result-info">
                 <h3 class="job-result-title">${job.title || job.job_title}</h3>
@@ -537,6 +616,24 @@ To maximize your interview chances, you should:
                 ${analysisHtml}
               </div>
               <div class="job-result-actions">
+                <div class="feedback-buttons">
+                  <button 
+                    data-action="like" 
+                    data-job-id="${jobId}" 
+                    class="feedback-btn ${isLiked ? 'active-like' : ''}"
+                    title="Like this job"
+                  >
+                    ${isLiked ? '👍' : '👍🏻'}
+                  </button>
+                  <button 
+                    data-action="dislike" 
+                    data-job-id="${jobId}" 
+                    class="feedback-btn ${isDisliked ? 'active-dislike' : ''}"
+                    title="Dislike this job"
+                  >
+                    ${isDisliked ? '👎' : '👎🏻'}
+                  </button>
+                </div>
                 <button data-action="save" data-job-id="${jobId}" class="btn btn-sm save-button ${isSaved ? 'btn-success' : 'btn-outline'}">
                   ${isSaved ? '❤️ Saved' : '🤍 Save'}
                 </button>
@@ -558,10 +655,8 @@ To maximize your interview chances, you should:
           </div>
         `;
       }).join('');
-
       attachResultListeners();
     }
-
     // ========== EVENT LISTENERS ==========
     function attachResultListeners() {
       document.querySelectorAll('[data-action="save"]').forEach(btn => {
@@ -571,7 +666,6 @@ To maximize your interview chances, you should:
           toggleSave(jobId);
         });
       });
-
       document.querySelectorAll('[data-action="report"]').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -579,8 +673,21 @@ To maximize your interview chances, you should:
           handleReport(jobId);
         });
       });
+      document.querySelectorAll('[data-action="like"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const jobId = btn.dataset.jobId;
+          toggleLike(jobId);
+        });
+      });
+      document.querySelectorAll('[data-action="dislike"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const jobId = btn.dataset.jobId;
+          toggleDislike(jobId);
+        });
+      });
     }
-
     document.getElementById('searchForm').addEventListener('submit', (e) => {
       e.preventDefault();
       state.query = document.getElementById('queryInput').value;
@@ -589,7 +696,6 @@ To maximize your interview chances, you should:
       state.remoteOnly = document.getElementById('remoteOnlyCheckbox').checked;
       searchJobs();
     });
-
     document.getElementById('remoteOnlyCheckbox').addEventListener('change', (e) => {
       const locationInput = document.getElementById('locationInput');
       const radiusSelect = document.getElementById('radiusSelect');
@@ -605,7 +711,6 @@ To maximize your interview chances, you should:
         radiusSelect.style.background = '';
       }
     });
-
     // ========== INIT ==========
     console.log('✅ Search page ready');
   </script>
