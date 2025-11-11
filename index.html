@@ -199,35 +199,68 @@
     
     /* Welcome Banner for First Time Users */
     .welcome-banner {
-      background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+      background: linear-gradient(135deg, #0A66C2 0%, #7C3AED 100%);
       border-radius: var(--radius-lg);
-      padding: var(--spacing-xl);
+      padding: var(--spacing-2xl);
       color: white;
       text-align: center;
       margin-bottom: var(--spacing-lg);
+      box-shadow: var(--shadow-xl);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: pulse 4s ease-in-out infinite;
     }
     
     .welcome-banner h2 {
-      font-size: 1.75rem;
-      font-weight: 700;
+      font-size: 2rem;
+      font-weight: 800;
       margin-bottom: var(--spacing-sm);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1;
     }
     
     .welcome-banner p {
-      font-size: 1.05rem;
+      font-size: 1.125rem;
       opacity: 0.95;
-      margin-bottom: var(--spacing-lg);
+      margin-bottom: var(--spacing-xl);
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 1;
     }
     
     .welcome-banner .btn {
       background: white;
-      color: var(--primary-blue);
-      font-weight: 600;
+      color: #0A66C2;
+      font-weight: 700;
+      font-size: 1.1rem;
+      padding: 16px 40px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1;
+      border: none;
     }
     
     .welcome-banner .btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      background: #f8fafc;
+    }
+
+    body.dark-mode .welcome-banner {
+      border-color: rgba(59, 130, 246, 0.3);
+      box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
     }
 
     /* Empty state improvements */
@@ -631,81 +664,12 @@
       }
     };
 
-    // ========== MOCK JOB DATA ==========
-    const mockJobs = [
-      {
-        id: 'job1',
-        title: 'Senior Product Manager',
-        company: 'TechCorp',
-        location: 'San Francisco, CA (Remote)',
-        type: 'Full-time',
-        salary: '$140k - $180k',
-        posted: '2 days ago',
-        description: 'Lead product strategy and development for our flagship SaaS platform. Work with cross-functional teams to deliver innovative solutions.',
-        skills: ['Product Strategy', 'Roadmap Planning', 'Agile', 'Data Analysis'],
-        matchScore: 92
-      },
-      {
-        id: 'job2',
-        title: 'Product Designer',
-        company: 'DesignHub',
-        location: 'New York, NY',
-        type: 'Full-time',
-        salary: '$120k - $150k',
-        posted: '1 day ago',
-        description: 'Design beautiful and intuitive user experiences for mobile and web applications. Collaborate with product and engineering teams.',
-        skills: ['Figma', 'UI/UX', 'Prototyping', 'User Research'],
-        matchScore: 88
-      },
-      {
-        id: 'job3',
-        title: 'Business Analyst',
-        company: 'DataFlow Inc',
-        location: 'Austin, TX',
-        type: 'Full-time',
-        salary: '$90k - $120k',
-        posted: '3 days ago',
-        description: 'Analyze business processes and requirements, create detailed documentation, and work with stakeholders to drive improvements.',
-        skills: ['SQL', 'Business Analysis', 'Requirements', 'Stakeholder Management'],
-        matchScore: 85
-      },
-      {
-        id: 'job4',
-        title: 'Software Engineer',
-        company: 'CloudTech',
-        location: 'Remote',
-        type: 'Full-time',
-        salary: '$130k - $170k',
-        posted: '4 days ago',
-        description: 'Build scalable backend systems and APIs. Work with modern cloud technologies and contribute to architectural decisions.',
-        skills: ['Python', 'AWS', 'Docker', 'Microservices'],
-        matchScore: 90
-      },
-      {
-        id: 'job5',
-        title: 'Marketing Manager',
-        company: 'GrowthLabs',
-        location: 'Boston, MA (Hybrid)',
-        type: 'Full-time',
-        salary: '$100k - $130k',
-        posted: '5 days ago',
-        description: 'Develop and execute marketing strategies to drive customer acquisition and brand awareness. Lead a team of marketing specialists.',
-        skills: ['Marketing Strategy', 'Content Marketing', 'Analytics', 'Team Leadership'],
-        matchScore: 78
-      },
-      {
-        id: 'job6',
-        title: 'Data Scientist',
-        company: 'AI Innovations',
-        location: 'Seattle, WA',
-        type: 'Full-time',
-        salary: '$150k - $190k',
-        posted: '1 week ago',
-        description: 'Build machine learning models to solve complex business problems. Work with large datasets and cutting-edge ML frameworks.',
-        skills: ['Python', 'Machine Learning', 'TensorFlow', 'Statistics'],
-        matchScore: 95
-      }
-    ];
+    // ========== API CONFIGURATION ==========
+    const API_CONFIG = {
+      url: 'https://jsearch.p.rapidapi.com/search',
+      key: '07a7dbe8f3msh3e7142e5f6f14cfp18e3cfjsn3b5e328da4fb',
+      host: 'jsearch.p.rapidapi.com'
+    };
 
     // ========== UTILITY FUNCTIONS ==========
     function showToast(message, type = 'success') {
@@ -719,6 +683,80 @@
       if (score >= 85) return 'high';
       if (score >= 70) return 'medium';
       return 'low';
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return 'Recently posted';
+      try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+        return 'Recently posted';
+      } catch {
+        return 'Recently posted';
+      }
+    }
+
+    function formatSalary(job) {
+      const min = job.job_min_salary;
+      const max = job.job_max_salary;
+      if (!min && !max) return 'Salary not listed';
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      });
+      if (min && max) return `${formatter.format(min)} - ${formatter.format(max)}`;
+      if (min) return `${formatter.format(min)}+`;
+      return `Up to ${formatter.format(max)}`;
+    }
+
+    function extractSkills(job) {
+      // Extract skills from job description or qualifications
+      const commonSkills = [
+        'Python', 'JavaScript', 'React', 'Node.js', 'AWS', 'Docker', 
+        'SQL', 'Agile', 'Leadership', 'Communication', 'Problem Solving',
+        'Product Management', 'UI/UX', 'Data Analysis', 'Marketing',
+        'Sales', 'Excel', 'Project Management', 'Strategy'
+      ];
+      
+      const description = (job.job_description || '').toLowerCase();
+      const found = commonSkills.filter(skill => 
+        description.includes(skill.toLowerCase())
+      );
+      
+      return found.length > 0 ? found.slice(0, 4) : ['Skills vary'];
+    }
+
+    function calculateMatchScore(job, preferences) {
+      // Simple matching algorithm based on preferences
+      let score = 70; // Base score
+      
+      if (!preferences) return score;
+      
+      const jobTitle = (job.job_title || '').toLowerCase();
+      const jobDesc = (job.job_description || '').toLowerCase();
+      const role = (preferences.role || '').toLowerCase();
+      const location = (preferences.location || '').toLowerCase();
+      
+      // Title match
+      if (role && jobTitle.includes(role)) {
+        score += 20;
+      }
+      
+      // Location match
+      const jobLocation = `${job.job_city || ''} ${job.job_state || ''} ${job.job_country || ''}`.toLowerCase();
+      if (location && (jobLocation.includes(location) || job.job_is_remote)) {
+        score += 10;
+      }
+      
+      return Math.min(score, 99);
     }
 
     function saveToLocalStorage() {
@@ -756,46 +794,61 @@
       loadingState.style.display = 'none';
       jobFeed.style.display = 'block';
 
-      jobFeed.innerHTML = state.jobs.map(job => `
-        <div class="job-card animate-fade-in" data-job-id="${job.id}">
+      jobFeed.innerHTML = state.jobs.map(job => {
+        const jobId = job.job_id || job.id || `temp-${Math.random()}`;
+        const companyName = job.employer_name || job.company || 'Company';
+        const title = job.job_title || job.title || 'Job Title';
+        const location = job.job_is_remote 
+          ? 'Remote' 
+          : `${job.job_city || ''}${job.job_city && job.job_state ? ', ' : ''}${job.job_state || ''}`.trim() || 'Location not specified';
+        const description = (job.job_description || job.description || 'No description available').substring(0, 200) + '...';
+        const skills = job.skills || extractSkills(job);
+        const matchScore = job.matchScore || calculateMatchScore(job, state.preferences);
+        const posted = job.posted || formatDate(job.job_posted_at_datetime_utc);
+        const salary = job.salary || formatSalary(job);
+        const type = job.job_employment_type || job.type || 'Full-time';
+        
+        return `
+        <div class="job-card animate-fade-in" data-job-id="${jobId}">
           <div class="job-card-header">
             <div class="job-card-company">
-              <div class="company-logo">${job.company[0]}</div>
+              <div class="company-logo">${companyName[0] || 'C'}</div>
               <div class="company-info">
-                <h3>${job.title}</h3>
-                <div class="company-name">${job.company}</div>
+                <h3>${title}</h3>
+                <div class="company-name">${companyName}</div>
               </div>
             </div>
             <div class="job-card-actions">
-              <button class="action-btn save-btn ${state.savedJobs.has(job.id) ? 'saved' : ''}" data-job-id="${job.id}" title="Save job">
-                ${state.savedJobs.has(job.id) ? '❤️' : '🤍'}
+              <button class="action-btn save-btn ${state.savedJobs.has(jobId) ? 'saved' : ''}" data-job-id="${jobId}" title="Save job">
+                ${state.savedJobs.has(jobId) ? '❤️' : '🤍'}
               </button>
-              <button class="action-btn" title="Share job">🔗</button>
+              <button class="action-btn share-btn" data-link="${job.job_apply_link || job.job_google_link || ''}" title="Share job">🔗</button>
             </div>
           </div>
           
           <div class="job-card-meta">
-            <span class="meta-tag">📍 ${job.location}</span>
-            <span class="meta-tag">💼 ${job.type}</span>
-            <span class="meta-tag">💰 ${job.salary}</span>
-            <span class="meta-tag">⏰ ${job.posted}</span>
+            <span class="meta-tag">📍 ${location}</span>
+            <span class="meta-tag">💼 ${type}</span>
+            <span class="meta-tag">💰 ${salary}</span>
+            <span class="meta-tag">⏰ ${posted}</span>
           </div>
           
-          <p class="job-card-description">${job.description}</p>
+          <p class="job-card-description">${description}</p>
           
           <div class="job-card-skills">
-            ${job.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+            ${Array.isArray(skills) ? skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('') : '<span class="skill-tag">Skills vary</span>'}
           </div>
           
           <div class="job-card-footer">
             <div class="match-score">
               <span style="color: var(--text-secondary); font-size: 0.9rem;">AI Match:</span>
-              <span class="match-badge ${getMatchBadgeClass(job.matchScore)}">${job.matchScore}%</span>
+              <span class="match-badge ${getMatchBadgeClass(matchScore)}">${matchScore}%</span>
             </div>
-            <button class="apply-btn" data-job-id="${job.id}">Apply Now →</button>
+            <a href="${job.job_apply_link || job.job_google_link || '#'}" target="_blank" class="apply-btn" data-job-id="${jobId}">Apply Now →</a>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       attachJobCardListeners();
     }
@@ -810,15 +863,24 @@
         });
       });
 
-      // Apply buttons
-      document.querySelectorAll('.apply-btn').forEach(btn => {
+      // Share buttons
+      document.querySelectorAll('.share-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
-          const jobId = btn.dataset.jobId;
+          const link = btn.dataset.link;
+          if (link) {
+            navigator.clipboard.writeText(link);
+            showToast('Link copied!', 'success');
+          }
+        });
+      });
+
+      // Apply buttons - track clicks
+      document.querySelectorAll('.apply-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
           state.metrics.applied++;
           state.metrics.reviewed++;
           updateMetrics();
-          showToast('Application started! 🎉', 'success');
         });
       });
 
@@ -988,15 +1050,82 @@
       showToast('Feed refreshed!', 'success');
     });
 
+    // ========== API SEARCH FUNCTION ==========
+    async function searchJobsAPI(query, location, remoteOnly = false) {
+      try {
+        const params = new URLSearchParams({
+          query: query || 'software engineer',
+          page: '1',
+          num_pages: '1',
+          date_posted: 'week',
+          remote_jobs_only: remoteOnly ? 'true' : 'false'
+        });
+        
+        if (location && !remoteOnly) {
+          params.set('location', location);
+        }
+        
+        const url = `${API_CONFIG.url}?${params.toString()}`;
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': API_CONFIG.key,
+            'X-RapidAPI-Host': API_CONFIG.host
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+          }
+          throw new Error(`API Error (${response.status})`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.data) {
+          return data.data;
+        } else {
+          throw new Error('No results found');
+        }
+      } catch (error) {
+        console.error('API Search Error:', error);
+        throw error;
+      }
+    }
+
     // ========== LOAD JOBS ==========
-    function loadJobs() {
+    async function loadJobs() {
       document.getElementById('loadingState').style.display = 'flex';
+      document.getElementById('jobFeed').style.display = 'none';
+      document.getElementById('emptyState').style.display = 'none';
       
-      // Simulate API call
-      setTimeout(() => {
-        state.jobs = mockJobs;
+      try {
+        // Get search parameters from preferences
+        const query = state.preferences?.role || 'software engineer';
+        const location = state.preferences?.location || '';
+        const isRemote = location.toLowerCase().includes('remote');
+        
+        // Call the API
+        const results = await searchJobsAPI(query, location, isRemote);
+        
+        if (results && results.length > 0) {
+          state.jobs = results;
+          renderJobs();
+          showToast(`Loaded ${results.length} jobs!`, 'success');
+        } else {
+          state.jobs = [];
+          renderJobs();
+        }
+      } catch (error) {
+        console.error('Load jobs error:', error);
+        showToast(error.message || 'Failed to load jobs', 'error');
+        state.jobs = [];
         renderJobs();
-      }, 1000);
+      } finally {
+        document.getElementById('loadingState').style.display = 'none';
+      }
     }
 
     // ========== DARK MODE ==========
@@ -1004,17 +1133,52 @@
     const darkModeToggle = document.getElementById('darkModeToggle');
     
     function toggleDarkMode() {
-      document.body.classList.toggle('dark-mode');
-      const isDark = document.body.classList.contains('dark-mode');
-      localStorage.setItem('darkMode', isDark);
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      
+      // Update toggle switch visual state
+      if (themeToggle) {
+        if (newTheme === 'dark') {
+          themeToggle.classList.add('active');
+        } else {
+          themeToggle.classList.remove('active');
+        }
+      }
+      
+      // Update nav item text
+      if (darkModeToggle) {
+        const navText = darkModeToggle.querySelector('span:last-child');
+        if (navText) {
+          navText.textContent = newTheme === 'dark' ? 'Light' : 'Dark';
+        }
+        const navIcon = darkModeToggle.querySelector('.nav-icon');
+        if (navIcon) {
+          navIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+      }
     }
     
     themeToggle?.addEventListener('click', toggleDarkMode);
     darkModeToggle?.addEventListener('click', toggleDarkMode);
     
-    // Load dark mode preference
-    if (localStorage.getItem('darkMode') === 'true') {
-      document.body.classList.add('dark-mode');
+    // Load theme preference on page load
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    if (savedTheme === 'dark') {
+      if (themeToggle) {
+        themeToggle.classList.add('active');
+      }
+      if (darkModeToggle) {
+        const navText = darkModeToggle.querySelector('span:last-child');
+        if (navText) navText.textContent = 'Light';
+        const navIcon = darkModeToggle.querySelector('.nav-icon');
+        if (navIcon) navIcon.textContent = '☀️';
+      }
     }
 
     // ========== AI TOGGLE ==========
@@ -1036,6 +1200,23 @@
         localStorage.removeItem('onboarded');
         localStorage.removeItem('preferences');
         location.reload();
+      }
+    });
+
+    // ========== HEADER SEARCH ==========
+    const headerSearchInput = document.getElementById('headerSearchInput');
+    headerSearchInput?.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const query = headerSearchInput.value.trim();
+        if (query) {
+          // Update preferences with search query
+          state.preferences = state.preferences || {};
+          state.preferences.role = query;
+          document.getElementById('jobTitlesInput').value = query;
+          saveToLocalStorage();
+          loadJobs();
+          showToast(`Searching for "${query}"...`, 'info');
+        }
       }
     });
 
