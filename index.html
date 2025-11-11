@@ -56,6 +56,9 @@
       font-size: 1.5rem;
       font-weight: 700;
       color: white;
+      border: 2px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
     }
     
     .company-info h3 {
@@ -350,6 +353,11 @@
     body.dark-mode .welcome-banner {
       border-color: rgba(59, 130, 246, 0.3);
       box-shadow: 0 10px 40px rgba(59, 130, 246, 0.2);
+    }
+
+    [data-theme="dark"] .company-logo {
+      border-color: var(--gray-200);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     /* Empty state improvements */
