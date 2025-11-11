@@ -4,22 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Job Search - CareerScout</title>
-
   <!-- Google Fonts - Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
   <!-- Custom Styles -->
   <link rel="stylesheet" href="style.css">
-
   <style>
     .search-page-wrapper {
       background: var(--bg-gradient);
       min-height: 100vh;
       padding: var(--spacing-lg);
     }
-
     .search-header-card {
       background: var(--bg-primary);
       border-radius: var(--radius-lg);
@@ -27,34 +23,29 @@
       margin-bottom: var(--spacing-lg);
       box-shadow: var(--shadow-lg);
     }
-
     .search-header-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: var(--spacing-md);
     }
-
     .search-form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: var(--spacing-md);
       margin-bottom: var(--spacing-md);
     }
-
     .search-form-row {
       display: grid;
       grid-template-columns: 2fr 1fr 1fr;
       gap: var(--spacing-md);
     }
-
     .search-results-card {
       background: var(--bg-primary);
       border-radius: var(--radius-lg);
       padding: var(--spacing-lg);
       box-shadow: var(--shadow-lg);
     }
-
     .job-result-item {
       border: 1px solid var(--gray-200);
       border-radius: var(--radius-lg);
@@ -63,38 +54,32 @@
       transition: all var(--transition-base);
       background: var(--bg-primary);
     }
-
     .job-result-item:hover {
       border-color: var(--primary-blue);
       box-shadow: var(--shadow-md);
       transform: translateY(-2px);
     }
-
     .job-result-header {
       display: flex;
       justify-content: space-between;
       align-items: start;
       margin-bottom: var(--spacing-md);
     }
-
     .job-result-info {
       flex: 1;
     }
-
     .job-result-title {
       font-size: 1.125rem;
       font-weight: 700;
       color: var(--text-primary);
       margin-bottom: 4px;
     }
-
     .job-result-company {
       font-size: 0.95rem;
       color: var(--primary-blue);
       font-weight: 600;
       margin-bottom: var(--spacing-sm);
     }
-
     .job-result-meta {
       display: flex;
       flex-wrap: wrap;
@@ -102,32 +87,34 @@
       font-size: 0.85rem;
       color: var(--text-secondary);
     }
-
     .job-result-actions {
       display: flex;
       gap: var(--spacing-sm);
     }
-
+    .save-button {
+      transition: all 0.2s ease;
+    }
+    .save-button.btn-success {
+      background-color: var(--success-green);
+      color: white;
+      border-color: var(--success-green);
+    }
     @media (max-width: 768px) {
       .search-form-row {
         grid-template-columns: 1fr;
       }
-
       .search-header-top {
         flex-direction: column;
         align-items: flex-start;
         gap: var(--spacing-md);
       }
-
       .job-result-header {
         flex-direction: column;
       }
-
       .job-result-actions {
         width: 100%;
         margin-top: var(--spacing-md);
       }
-
       .job-result-actions .btn {
         flex: 1;
       }
@@ -149,7 +136,6 @@
             <span>Back to CareerScout</span>
           </a>
         </div>
-
         <!-- Search Form -->
         <form id="searchForm">
           <div class="search-form-grid">
@@ -163,7 +149,6 @@
                 value=""
               >
             </div>
-
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label">Location</label>
               <input
@@ -175,7 +160,6 @@
               >
             </div>
           </div>
-
           <div class="search-form-row" style="margin-top: var(--spacing-md);">
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label">Search Radius</label>
@@ -185,7 +169,6 @@
                 <option value="100">100 miles</option>
               </select>
             </div>
-
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label">&nbsp;</label>
               <div style="display: flex; align-items: center; padding: 10px 0;">
@@ -193,7 +176,6 @@
                 <label for="remoteOnlyCheckbox" style="margin: 0; font-weight: 600; cursor: pointer;">Remote Only</label>
               </div>
             </div>
-
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label">&nbsp;</label>
               <button type="submit" class="btn btn-primary btn-block">
@@ -204,7 +186,6 @@
           </div>
         </form>
       </div>
-
       <!-- Loading State -->
       <div id="loadingState" class="loading" style="display: none; background: var(--bg-primary); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);">
         <div>
@@ -212,7 +193,6 @@
           <p style="margin-top: var(--spacing-md); color: var(--text-secondary);">Searching for jobs...</p>
         </div>
       </div>
-
       <!-- Error State -->
       <div id="errorState" style="display: none;">
         <div style="background: var(--error-red-light); border-left: 4px solid var(--error-red); padding: var(--spacing-lg); border-radius: var(--radius-lg);">
@@ -220,7 +200,6 @@
           <p id="errorMessage" style="color: var(--gray-700);"></p>
         </div>
       </div>
-
       <!-- Results -->
       <div id="resultsContainer" style="display: none;">
         <div class="search-results-card animate-fade-in">
@@ -229,7 +208,6 @@
               Found <span id="resultsCount">0</span> Jobs
             </h2>
           </div>
-
           <div id="jobResults">
             <!-- Results will be inserted here -->
           </div>
@@ -237,7 +215,6 @@
       </div>
     </div>
   </div>
-
   <script>
     // ========== STATE ==========
     let state = {
@@ -248,10 +225,19 @@
       loading: false,
       error: null,
       results: [],
+      savedJobs: new Set(JSON.parse(localStorage.getItem('searchPageSavedJobs') || '[]')),
       apiBase: 'https://careerscout.onrender.com/api'
     };
 
     // ========== UTILITIES ==========
+    function saveSavedJobs() {
+      try {
+        localStorage.setItem('searchPageSavedJobs', JSON.stringify(Array.from(state.savedJobs)));
+      } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+      }
+    }
+
     function formatDate(dateString) {
       if (!dateString) return 'N/A';
       try {
@@ -259,7 +245,6 @@
         const now = new Date();
         const diffTime = Math.abs(now - date);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
         if (diffDays === 0) return 'Today';
         if (diffDays === 1) return 'Yesterday';
         if (diffDays < 7) return `${diffDays} days ago`;
@@ -274,75 +259,231 @@
     function formatSalary(job) {
       const min = job.job_min_salary;
       const max = job.job_max_salary;
-
       if (!min && !max) return 'Not specified';
-
       const formatter = new Intl.NumberFormat('en-US', {
         style: 'currency',
         currency: 'USD',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
       });
-
       if (min && max) return `${formatter.format(min)} - ${formatter.format(max)}/year`;
       if (min) return `${formatter.format(min)}+/year`;
       return `Up to ${formatter.format(max)}/year`;
     }
 
+    // ========== MOCK ANALYSIS FUNCTIONS ==========
+    function generateBadge(label, rating, color) {
+      return `
+        <span style="display:inline-block; padding: 4px 8px; font-size: 0.8rem; font-weight: 600; border-radius: 4px; background-color: ${color}; color: white; margin-right: 8px;">
+          ${label}: ${rating}
+        </span>
+      `;
+    }
+
+    function getCompanyAnalysis(companyName) {
+      const hash = companyName.length % 5;
+      let financials, workLife, growthOpp;
+      let financialsColor, workLifeColor, growthOppColor;
+
+      if (hash === 0) { // Stable/Large companies
+        financials = 'Stable (↑)'; financialsColor = '#057642';
+        workLife = '4.1/5 (High)'; workLifeColor = '#0A66C2';
+        growthOpp = 'High (80%)'; growthOppColor = '#057642';
+      } else if (hash === 1) { // High Growth/Mid-stage
+        financials = 'Growth (↑↑)'; financialsColor = '#0A66C2';
+        workLife = '3.8/5 (Good)'; workLifeColor = '#0A66C2';
+        growthOpp = 'Very High (95%)'; growthOppColor = '#057642';
+      } else if (hash === 2) { // Challenged/Restructuring
+        financials = 'Weak (↓↓)'; financialsColor = '#D32F2F';
+        workLife = '2.5/5 (Low)'; workLifeColor = '#D32F2F';
+        growthOpp = 'Low (30%)'; growthOppColor = '#D32F2F';
+      } else if (hash === 3) { // Average/Steady
+        financials = 'Steady (→)'; financialsColor = '#F5A623';
+        workLife = '3.5/5 (Avg)'; workLifeColor = '#F5A623';
+        growthOpp = 'Mid (60%)'; growthOppColor = '#F5A623';
+      } else { // Niche/Specific
+        financials = 'N/A'; financialsColor = '#666666';
+        workLife = 'N/A'; workLifeColor = '#666666';
+        growthOpp = 'N/A'; growthOppColor = '#666666';
+      }
+
+      return `
+        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--gray-200);">
+          ${generateBadge('Company Financials', financials, financialsColor)}
+          ${generateBadge('Work Life', workLife, workLifeColor)}
+          ${generateBadge('Growth Opportunity', growthOpp, growthOppColor)}
+          <p style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 5px;">
+            Simulated analysis based on hypothetical financial and employee data.
+          </p>
+        </div>
+      `;
+    }
+
+    function generateProspectReport(job) {
+      const company = job.company || job.employer_name || 'Unknown Company';
+      const title = job.title || job.job_title;
+      const description = job.job_description || 'No description available.';
+      
+      const hash = company.length % 5;
+      let financials, workLife, growthOpp, emphasis;
+
+      if (hash === 0) { // Stable/Large
+        financials = 'Stable (Revenue ↑, EBITDA ↑). Strong financial footing.';
+        workLife = 'High (4.1/5). Excellent balance, but may have slow promotion cycles.';
+        growthOpp = 'Mid-High (80%). Ample internal resources for professional development.';
+        emphasis = [
+          'Emphasize **stability**, **process adherence**, and **large-scale impact**.',
+          'Highlight experience with formal project management (e.g., Scrum/Agile) and cross-functional teams.',
+          'Show concrete **results (metrics)** from past large organizations.',
+        ];
+      } else if (hash === 1) { // High Growth/Mid-stage
+        financials = 'High Growth (Revenue ↑↑, EBITDA Stable). Aggressive market expansion.';
+        workLife = 'Medium (3.8/5). **Fast-paced**, potential for long hours, high energy environment.';
+        growthOpp = 'Very High (95%). **Rapid promotions** and quick assumption of new responsibilities.';
+        emphasis = [
+          'Emphasize **speed**, **ownership**, and **ability to handle ambiguity**.',
+          'Highlight experience **launching new products** or features from scratch.',
+          'Focus on **entrepreneurial spirit** and ability to wear multiple hats.',
+        ];
+      } else if (hash === 2) { // Challenged/Restructuring
+        financials = 'Weak (Revenue ↓↓, EBITDA Loss). Focus on **cost-cutting** and efficiency.';
+        workLife = 'Low (2.5/5). High turnover, low morale due to uncertainty.';
+        growthOpp = 'Low (30%). Limited budget for training; focus is on immediate problem-solving.';
+        emphasis = [
+          'Emphasize **turnaround experience**, **cost-saving initiatives**, and efficiency improvements.',
+          'Highlight **resilience** and ability to perform under pressure.',
+          'Show commitment to **staying long-term** despite company challenges.',
+        ];
+      } else { // Average/Steady
+        financials = 'Steady (Revenue →, EBITDA ↑). Consistent, reliable performance.';
+        workLife = 'Good (3.5/5). Standard corporate environment, predictable schedule.';
+        growthOpp = 'Mid (60%). **Clear career ladder**, average time-to-promotion.';
+        emphasis = [
+          'Emphasize **reliability**, **consistency**, and clear communication skills.',
+          'Highlight **collaboration** and stakeholder management experience.',
+          'Show how your skills directly **support the company\'s current stated goals**.',
+        ];
+      }
+
+      const report = `
+==================================================
+📊 Job Prospect Report for: ${title} at ${company}
+==================================================
+
+1. ORGANIZATIONAL HEALTH & PROSPECTS
+----------------------------------------
+- Company Financials (Revenue/EBITDA Trend): ${financials}
+- Quality of Work Life (Employee Happiness): ${workLife}
+- Growth Opportunity (Career Trajectory): ${growthOpp}
+
+2. APPLICATION STRATEGY & BOOSTERS
+----------------------------------------
+To maximize your interview chances, you should:
+
+* **What to Emphasize (Keywords & Skills):**
+    - ${emphasis.join('\n    - ')}
+
+* **Suggestions to Boost Chances (AI Coaching):**
+    - **Customization:** Tailor your resume summary to include 3 keywords explicitly mentioned in the job description.
+    - **Research:** Mention a recent company win, product launch, or industry challenge in your cover letter to show genuine interest.
+    - **Networking:** Find and reach out to one current employee in a similar role via LinkedIn for an informational interview.
+
+==================================================
+      `.trim();
+      return report;
+    }
+
+    function handleReport(jobId) {
+      const job = state.results.find(j => (j.id || j.job_id) === jobId);
+      if (!job) return;
+      const report = generateProspectReport(job);
+      alert(report);
+    }
+
+    // ========== SAVE LOGIC ==========
+    function toggleSave(jobId) {
+      if (state.savedJobs.has(jobId)) {
+        state.savedJobs.delete(jobId);
+        showToast('Job removed from saved.', 'info');
+      } else {
+        state.savedJobs.add(jobId);
+        showToast('Job saved!', 'success');
+      }
+      saveSavedJobs();
+      renderResults();
+    }
+
+    function showToast(message, type = 'info') {
+      let toast = document.getElementById('toast');
+      
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.className = 'toast';
+        document.body.appendChild(toast); 
+      }
+      
+      toast.className = `toast toast-${type} show`;
+      toast.textContent = message;
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 4000);
+    }
+
     // ========== API ==========
-   async function searchJobs() {
-  state.loading = true;
-  state.error = null;
-  state.results = [];
-  updateUI();
+    async function searchJobs() {
+      state.loading = true;
+      state.error = null;
+      state.results = [];
+      updateUI();
 
-  const params = new URLSearchParams({
-    query: state.query || 'software engineer',
-    page: '1',
-    num_pages: '1',
-    date_posted: 'all',
-    remote_jobs_only: state.remoteOnly ? 'true' : 'false'
-  });
+      const params = new URLSearchParams({
+        query: state.query || 'software engineer',
+        page: '1',
+        num_pages: '1',
+        date_posted: 'all',
+        remote_jobs_only: state.remoteOnly ? 'true' : 'false'
+      });
 
-  if (state.location && !state.remoteOnly) {
-    params.set('location', state.location);
-    params.set('radius', state.radius);
-  }
-
-  // Call RapidAPI directly
-  const url = `https://jsearch.p.rapidapi.com/search?${params.toString()}`;
-
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-RapidAPI-Key': '07a7dbe8f3msh3e7142e5f6f14cfp18e3cfjsn3b5e328da4fb',
-        'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
+      if (state.location && !state.remoteOnly) {
+        params.set('location', state.location);
+        params.set('radius', state.radius);
       }
-    });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+      const url = `https://jsearch.p.rapidapi.com/search?${params.toString()}`;
+
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'X-RapidAPI-Key': '07a7dbe8f3msh3e7142e5f6f14cfp18e3cfjsn3b5e328da4fb',
+            'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
+          }
+        });
+
+        if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Rate limit exceeded. Please try again in a few minutes.');
+          }
+          throw new Error(`API Error (${response.status})`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'OK' && data.data) {
+          state.results = data.data;
+        } else {
+          throw new Error('No results found');
+        }
+      } catch (err) {
+        state.error = err.message;
+        console.error('Search error:', err);
+      } finally {
+        state.loading = false;
+        updateUI();
       }
-      throw new Error(`API Error (${response.status})`);
     }
-
-    const data = await response.json();
-
-    if (data.status === 'OK' && data.data) {
-      state.results = data.data;
-    } else {
-      throw new Error('No results found');
-    }
-  } catch (err) {
-    state.error = err.message;
-    console.error('Search error:', err);
-  } finally {
-    state.loading = false;
-    updateUI();
-  }
-}
 
     // ========== RENDER ==========
     function updateUI() {
@@ -350,7 +491,6 @@
       const errorEl = document.getElementById('errorState');
       const resultsEl = document.getElementById('resultsContainer');
 
-      // Hide all states
       loadingEl.style.display = 'none';
       errorEl.style.display = 'none';
       resultsEl.style.display = 'none';
@@ -374,39 +514,73 @@
 
     function renderResults() {
       document.getElementById('resultsCount').textContent = state.results.length;
-
       const jobResultsEl = document.getElementById('jobResults');
-      jobResultsEl.innerHTML = state.results.map(job => `
-        <div class="job-result-item">
-          <div class="job-result-header">
-            <div class="job-result-info">
-              <h3 class="job-result-title">${job.job_title}</h3>
-              <div class="job-result-company">${job.employer_name}</div>
-              <div class="job-result-meta">
-                <span>${job.job_is_remote ? '🌐 Remote' : `📍 ${job.job_city || ''}, ${job.job_state || ''}`}</span>
-                <span>⏰ ${formatDate(job.job_posted_at_datetime_utc)}</span>
-                <span>💰 ${formatSalary(job)}</span>
-                ${job.job_employment_type ? `<span>💼 ${job.job_employment_type}</span>` : ''}
+      
+      jobResultsEl.innerHTML = state.results.map(job => {
+        const jobId = job.id || job.job_id || `temp-${Math.random()}`;
+        const isSaved = state.savedJobs.has(jobId);
+        const companyName = job.company || job.employer_name || 'Unknown Company';
+        const analysisHtml = getCompanyAnalysis(companyName);
+
+        return `
+          <div class="job-result-item">
+            <div class="job-result-header">
+              <div class="job-result-info">
+                <h3 class="job-result-title">${job.title || job.job_title}</h3>
+                <div class="job-result-company">${companyName}</div>
+                <div class="job-result-meta">
+                  <span>${job.remote || job.job_is_remote ? '🌐 Remote' : `📍 ${job.job_city || ''}, ${job.job_state || ''}`}</span>
+                  <span>⏰ ${formatDate(job.job_posted_at_datetime_utc)}</span>
+                  <span>💰 ${formatSalary(job)}</span>
+                  ${job.job_employment_type ? `<span>💼 ${job.job_employment_type}</span>` : ''}
+                </div>
+                ${analysisHtml}
+              </div>
+              <div class="job-result-actions">
+                <button data-action="save" data-job-id="${jobId}" class="btn btn-sm save-button ${isSaved ? 'btn-success' : 'btn-outline'}">
+                  ${isSaved ? '❤️ Saved' : '🤍 Save'}
+                </button>
+                <button data-action="report" data-job-id="${jobId}" class="btn btn-secondary btn-sm">
+                  📊 Report
+                </button>
+                ${job.job_apply_link ? `
+                  <a href="${job.job_apply_link}" target="_blank" class="btn btn-primary btn-sm">
+                    Apply
+                  </a>
+                ` : ''}
+                ${job.job_google_link ? `
+                  <a href="${job.job_google_link}" target="_blank" class="btn btn-outline btn-sm">
+                    Details
+                  </a>
+                ` : ''}
               </div>
             </div>
-            <div class="job-result-actions">
-              ${job.job_apply_link ? `
-                <a href="${job.job_apply_link}" target="_blank" class="btn btn-primary btn-sm">
-                  Apply
-                </a>
-              ` : ''}
-              ${job.job_google_link ? `
-                <a href="${job.job_google_link}" target="_blank" class="btn btn-outline btn-sm">
-                  Details
-                </a>
-              ` : ''}
-            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
+
+      attachResultListeners();
     }
 
     // ========== EVENT LISTENERS ==========
+    function attachResultListeners() {
+      document.querySelectorAll('[data-action="save"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const jobId = btn.dataset.jobId;
+          toggleSave(jobId);
+        });
+      });
+
+      document.querySelectorAll('[data-action="report"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const jobId = btn.dataset.jobId;
+          handleReport(jobId);
+        });
+      });
+    }
+
     document.getElementById('searchForm').addEventListener('submit', (e) => {
       e.preventDefault();
       state.query = document.getElementById('queryInput').value;
@@ -419,7 +593,6 @@
     document.getElementById('remoteOnlyCheckbox').addEventListener('change', (e) => {
       const locationInput = document.getElementById('locationInput');
       const radiusSelect = document.getElementById('radiusSelect');
-
       if (e.target.checked) {
         locationInput.disabled = true;
         radiusSelect.disabled = true;
