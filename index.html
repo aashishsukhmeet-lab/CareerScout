@@ -196,6 +196,95 @@
       transform: translateY(-1px);
       box-shadow: var(--shadow-md);
     }
+
+    /* Like/Dislike Feedback Buttons */
+    .feedback-buttons {
+      display: flex;
+      gap: var(--spacing-xs);
+      padding: 4px;
+      background: var(--gray-100);
+      border-radius: 6px;
+    }
+    
+    .feedback-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 1.2rem;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .feedback-btn:hover {
+      background: white;
+      transform: scale(1.1);
+    }
+    
+    .feedback-btn.active-like {
+      background: #10b981;
+      color: white;
+    }
+    
+    .feedback-btn.active-dislike {
+      background: #ef4444;
+      color: white;
+    }
+
+    .job-card.liked {
+      border-color: #10b981;
+      background: linear-gradient(to right, #f0fdf4 0%, var(--bg-primary) 100%);
+    }
+
+    .job-card.disliked {
+      opacity: 0.6;
+      border-color: #ef4444;
+      background: linear-gradient(to right, #fef2f2 0%, var(--bg-primary) 100%);
+    }
+
+    /* Company Health Score */
+    .company-health {
+      margin-top: var(--spacing-md);
+      padding-top: var(--spacing-md);
+      border-top: 1px dashed var(--gray-200);
+    }
+
+    .health-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 4px;
+      color: white;
+      margin-right: 8px;
+      margin-bottom: 4px;
+    }
+
+    .health-badge.positive {
+      background: #057642;
+    }
+
+    .health-badge.neutral {
+      background: #0A66C2;
+    }
+
+    .health-badge.negative {
+      background: #D32F2F;
+    }
+
+    .health-badge.warning {
+      background: #F5A623;
+    }
+
+    .health-disclaimer {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      margin-top: 6px;
+      font-style: italic;
+    }
     
     /* Welcome Banner for First Time Users */
     .welcome-banner {
@@ -654,6 +743,8 @@
     const state = {
       jobs: [],
       savedJobs: new Set(JSON.parse(localStorage.getItem('savedJobs') || '[]')),
+      likedJobs: new Set(JSON.parse(localStorage.getItem('likedJobs') || '[]')),
+      dislikedJobs: new Set(JSON.parse(localStorage.getItem('dislikedJobs') || '[]')),
       preferences: JSON.parse(localStorage.getItem('preferences') || 'null'),
       onboarded: localStorage.getItem('onboarded') === 'true',
       metrics: {
@@ -761,8 +852,66 @@
 
     function saveToLocalStorage() {
       localStorage.setItem('savedJobs', JSON.stringify(Array.from(state.savedJobs)));
+      localStorage.setItem('likedJobs', JSON.stringify(Array.from(state.likedJobs)));
+      localStorage.setItem('dislikedJobs', JSON.stringify(Array.from(state.dislikedJobs)));
       localStorage.setItem('preferences', JSON.stringify(state.preferences));
       updateMetrics();
+    }
+
+    function isJobExpired(postedDate) {
+      if (!postedDate) return false;
+      try {
+        const posted = new Date(postedDate);
+        const now = new Date();
+        const daysDiff = Math.floor((now - posted) / (1000 * 60 * 60 * 24));
+        return daysDiff > 30; // Consider jobs older than 30 days as expired
+      } catch {
+        return false;
+      }
+    }
+
+    function getCompanyHealth(companyName) {
+      // Generate consistent health score based on company name
+      const hash = companyName.length % 5;
+      
+      let financials, workLife, growth;
+      let financialsColor, workLifeColor, growthColor;
+      
+      if (hash === 0) { // Stable/Large companies
+        financials = { label: 'Stable (↑)', type: 'positive' };
+        workLife = { label: '4.1/5 (High)', type: 'neutral' };
+        growth = { label: 'High (80%)', type: 'positive' };
+      } else if (hash === 1) { // High Growth/Mid-stage
+        financials = { label: 'Growth (↑↑)', type: 'neutral' };
+        workLife = { label: '3.8/5 (Good)', type: 'neutral' };
+        growth = { label: 'Very High (95%)', type: 'positive' };
+      } else if (hash === 2) { // Challenged/Restructuring
+        financials = { label: 'Weak (↓↓)', type: 'negative' };
+        workLife = { label: '2.5/5 (Low)', type: 'negative' };
+        growth = { label: 'Low (30%)', type: 'negative' };
+      } else if (hash === 3) { // Average/Steady
+        financials = { label: 'Steady (→)', type: 'warning' };
+        workLife = { label: '3.5/5 (Avg)', type: 'warning' };
+        growth = { label: 'Mid (60%)', type: 'warning' };
+      } else { // Niche/Specific
+        financials = { label: 'N/A', type: 'neutral' };
+        workLife = { label: 'N/A', type: 'neutral' };
+        growth = { label: 'N/A', type: 'neutral' };
+      }
+      
+      return { financials, workLife, growth };
+    }
+
+    function renderCompanyHealth(companyName) {
+      const health = getCompanyHealth(companyName);
+      return `
+        <div class="company-health">
+          <span class="health-badge ${health.financials.type}">Financials: ${health.financials.label}</span>
+          <span class="health-badge ${health.workLife.type}">Work-Life: ${health.workLife.label}</span>
+          <span class="health-badge ${health.growth.type}">Growth: ${health.growth.label}</span>
+          <div class="health-disclaimer">Based on simulated financial and employee data</div>
+        </div>
+      `;
     }
 
     function updateMetrics() {
@@ -783,7 +932,10 @@
       const loadingState = document.getElementById('loadingState');
       const emptyState = document.getElementById('emptyState');
 
-      if (state.jobs.length === 0) {
+      // Filter out expired jobs
+      const activeJobs = state.jobs.filter(job => !isJobExpired(job.job_posted_at_datetime_utc));
+      
+      if (activeJobs.length === 0) {
         jobFeed.style.display = 'none';
         emptyState.style.display = 'block';
         loadingState.style.display = 'none';
@@ -794,7 +946,7 @@
       loadingState.style.display = 'none';
       jobFeed.style.display = 'block';
 
-      jobFeed.innerHTML = state.jobs.map(job => {
+      jobFeed.innerHTML = activeJobs.map(job => {
         const jobId = job.job_id || job.id || `temp-${Math.random()}`;
         const companyName = job.employer_name || job.company || 'Company';
         const title = job.job_title || job.title || 'Job Title';
@@ -808,8 +960,17 @@
         const salary = job.salary || formatSalary(job);
         const type = job.job_employment_type || job.type || 'Full-time';
         
+        const isLiked = state.likedJobs.has(jobId);
+        const isDisliked = state.dislikedJobs.has(jobId);
+        
+        let cardClass = 'job-card animate-fade-in';
+        if (isLiked) cardClass += ' liked';
+        if (isDisliked) cardClass += ' disliked';
+        
+        const companyHealthHtml = renderCompanyHealth(companyName);
+        
         return `
-        <div class="job-card animate-fade-in" data-job-id="${jobId}">
+        <div class="${cardClass}" data-job-id="${jobId}">
           <div class="job-card-header">
             <div class="job-card-company">
               <div class="company-logo">${companyName[0] || 'C'}</div>
@@ -819,6 +980,24 @@
               </div>
             </div>
             <div class="job-card-actions">
+              <div class="feedback-buttons">
+                <button 
+                  class="feedback-btn ${isLiked ? 'active-like' : ''}" 
+                  data-action="like" 
+                  data-job-id="${jobId}"
+                  title="Like this job"
+                >
+                  ${isLiked ? '👍' : '👍🏻'}
+                </button>
+                <button 
+                  class="feedback-btn ${isDisliked ? 'active-dislike' : ''}" 
+                  data-action="dislike" 
+                  data-job-id="${jobId}"
+                  title="Dislike this job"
+                >
+                  ${isDisliked ? '👎' : '👎🏻'}
+                </button>
+              </div>
               <button class="action-btn save-btn ${state.savedJobs.has(jobId) ? 'saved' : ''}" data-job-id="${jobId}" title="Save job">
                 ${state.savedJobs.has(jobId) ? '❤️' : '🤍'}
               </button>
@@ -839,6 +1018,8 @@
             ${Array.isArray(skills) ? skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('') : '<span class="skill-tag">Skills vary</span>'}
           </div>
           
+          ${companyHealthHtml}
+          
           <div class="job-card-footer">
             <div class="match-score">
               <span style="color: var(--text-secondary); font-size: 0.9rem;">AI Match:</span>
@@ -854,6 +1035,24 @@
     }
 
     function attachJobCardListeners() {
+      // Like buttons
+      document.querySelectorAll('[data-action="like"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const jobId = btn.dataset.jobId;
+          toggleLike(jobId);
+        });
+      });
+
+      // Dislike buttons
+      document.querySelectorAll('[data-action="dislike"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const jobId = btn.dataset.jobId;
+          toggleDislike(jobId);
+        });
+      });
+
       // Save buttons
       document.querySelectorAll('.save-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -891,6 +1090,48 @@
           updateMetrics();
         });
       });
+    }
+
+    function toggleLike(jobId) {
+      const wasLiked = state.likedJobs.has(jobId);
+      const wasDisliked = state.dislikedJobs.has(jobId);
+      
+      if (wasLiked) {
+        // Unlike
+        state.likedJobs.delete(jobId);
+        showToast('Removed like', 'info');
+      } else {
+        // Like (remove dislike if it exists)
+        if (wasDisliked) {
+          state.dislikedJobs.delete(jobId);
+        }
+        state.likedJobs.add(jobId);
+        showToast('Job liked! 👍', 'success');
+      }
+      
+      saveToLocalStorage();
+      renderJobs();
+    }
+
+    function toggleDislike(jobId) {
+      const wasDisliked = state.dislikedJobs.has(jobId);
+      const wasLiked = state.likedJobs.has(jobId);
+      
+      if (wasDisliked) {
+        // Remove dislike
+        state.dislikedJobs.delete(jobId);
+        showToast('Removed dislike', 'info');
+      } else {
+        // Dislike (remove like if it exists)
+        if (wasLiked) {
+          state.likedJobs.delete(jobId);
+        }
+        state.dislikedJobs.add(jobId);
+        showToast('Not interested in this job', 'info');
+      }
+      
+      saveToLocalStorage();
+      renderJobs();
     }
 
     function toggleSaveJob(jobId) {
