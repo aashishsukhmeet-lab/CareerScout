@@ -13,6 +13,248 @@
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="style.css">
+  <style>
+    /* Job Card Styles */
+    .job-card {
+      background: var(--bg-primary);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+      transition: all var(--transition-base);
+      cursor: pointer;
+    }
+    
+    .job-card:hover {
+      border-color: var(--primary-blue);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .job-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .job-card-company {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .company-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: white;
+    }
+    
+    .company-info h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    
+    .company-name {
+      font-size: 0.95rem;
+      color: var(--primary-blue);
+      font-weight: 600;
+    }
+    
+    .job-card-actions {
+      display: flex;
+      gap: var(--spacing-xs);
+    }
+    
+    .action-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      background: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 1.25rem;
+    }
+    
+    .action-btn:hover {
+      background: var(--gray-100);
+      transform: scale(1.1);
+    }
+    
+    .action-btn.saved {
+      background: var(--success-green);
+      border-color: var(--success-green);
+      color: white;
+    }
+    
+    .job-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .meta-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      background: var(--gray-100);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    
+    .job-card-description {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .job-card-skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .skill-tag {
+      padding: 6px 12px;
+      background: var(--primary-blue-light);
+      color: var(--primary-blue);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    
+    .job-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: var(--spacing-md);
+      border-top: 1px solid var(--gray-200);
+    }
+    
+    .match-score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .match-badge {
+      padding: 6px 12px;
+      background: var(--success-green-light);
+      color: var(--success-green);
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    
+    .match-badge.high {
+      background: var(--success-green-light);
+      color: var(--success-green);
+    }
+    
+    .match-badge.medium {
+      background: #FEF3C7;
+      color: #D97706;
+    }
+    
+    .match-badge.low {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+    
+    .apply-btn {
+      padding: 10px 24px;
+      background: var(--primary-blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .apply-btn:hover {
+      background: var(--primary-blue-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    /* Welcome Banner for First Time Users */
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--primary-blue), var(--accent-purple));
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-xl);
+      color: white;
+      text-align: center;
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .welcome-banner h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .welcome-banner p {
+      font-size: 1.05rem;
+      opacity: 0.95;
+      margin-bottom: var(--spacing-lg);
+    }
+    
+    .welcome-banner .btn {
+      background: white;
+      color: var(--primary-blue);
+      font-weight: 600;
+    }
+    
+    .welcome-banner .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Empty state improvements */
+    .empty-state {
+      text-align: center;
+      padding: var(--spacing-xl) var(--spacing-lg);
+    }
+    
+    .empty-state-icon {
+      font-size: 4rem;
+      margin-bottom: var(--spacing-md);
+      opacity: 0.5;
+    }
+    
+    .empty-state-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .empty-state-text {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      margin-bottom: var(--spacing-lg);
+    }
+  </style>
 </head>
 <body>
   <!-- Header -->
@@ -68,6 +310,16 @@
       <div class="main-grid">
         <!-- Main Feed Area -->
         <div class="feed-area">
+          <!-- Welcome Banner (shown to new users) -->
+          <div id="welcomeBanner" class="welcome-banner animate-fade-in" style="display: none;">
+            <h2>👋 Welcome to CareerScout!</h2>
+            <p>Let's personalize your job search experience. Tell us what you're looking for.</p>
+            <button class="btn btn-lg" id="startOnboardingBtn">
+              <span>✨</span>
+              <span>Get Started</span>
+            </button>
+          </div>
+
           <!-- Page Title Section -->
           <div class="card animate-fade-in">
             <div class="card-header">
@@ -89,7 +341,10 @@
 
           <!-- Loading State -->
           <div id="loadingState" class="loading" style="display: none;">
-            <div class="spinner"></div>
+            <div>
+              <div class="spinner"></div>
+              <p style="margin-top: var(--spacing-md); color: var(--text-secondary);">Loading personalized job recommendations...</p>
+            </div>
           </div>
 
           <!-- Empty State -->
@@ -97,6 +352,10 @@
             <div class="empty-state-icon">📭</div>
             <h3 class="empty-state-title">No jobs to show</h3>
             <p class="empty-state-text">Adjust your preferences or refresh your feed to discover new opportunities</p>
+            <button class="btn btn-primary" id="updatePreferencesBtn">
+              <span>⚙️</span>
+              <span>Update Preferences</span>
+            </button>
           </div>
         </div>
 
@@ -356,7 +615,453 @@
     }
   </script>
 
-  <!-- App Script (ES6 Module) -->
-  <script type="module" src="app.js"></script>
+  <!-- Inline App Script with Mock Data -->
+  <script>
+    // ========== STATE MANAGEMENT ==========
+    const state = {
+      jobs: [],
+      savedJobs: new Set(JSON.parse(localStorage.getItem('savedJobs') || '[]')),
+      preferences: JSON.parse(localStorage.getItem('preferences') || 'null'),
+      onboarded: localStorage.getItem('onboarded') === 'true',
+      metrics: {
+        reviewed: 0,
+        saved: 0,
+        applied: 0,
+        matchRate: 0
+      }
+    };
+
+    // ========== MOCK JOB DATA ==========
+    const mockJobs = [
+      {
+        id: 'job1',
+        title: 'Senior Product Manager',
+        company: 'TechCorp',
+        location: 'San Francisco, CA (Remote)',
+        type: 'Full-time',
+        salary: '$140k - $180k',
+        posted: '2 days ago',
+        description: 'Lead product strategy and development for our flagship SaaS platform. Work with cross-functional teams to deliver innovative solutions.',
+        skills: ['Product Strategy', 'Roadmap Planning', 'Agile', 'Data Analysis'],
+        matchScore: 92
+      },
+      {
+        id: 'job2',
+        title: 'Product Designer',
+        company: 'DesignHub',
+        location: 'New York, NY',
+        type: 'Full-time',
+        salary: '$120k - $150k',
+        posted: '1 day ago',
+        description: 'Design beautiful and intuitive user experiences for mobile and web applications. Collaborate with product and engineering teams.',
+        skills: ['Figma', 'UI/UX', 'Prototyping', 'User Research'],
+        matchScore: 88
+      },
+      {
+        id: 'job3',
+        title: 'Business Analyst',
+        company: 'DataFlow Inc',
+        location: 'Austin, TX',
+        type: 'Full-time',
+        salary: '$90k - $120k',
+        posted: '3 days ago',
+        description: 'Analyze business processes and requirements, create detailed documentation, and work with stakeholders to drive improvements.',
+        skills: ['SQL', 'Business Analysis', 'Requirements', 'Stakeholder Management'],
+        matchScore: 85
+      },
+      {
+        id: 'job4',
+        title: 'Software Engineer',
+        company: 'CloudTech',
+        location: 'Remote',
+        type: 'Full-time',
+        salary: '$130k - $170k',
+        posted: '4 days ago',
+        description: 'Build scalable backend systems and APIs. Work with modern cloud technologies and contribute to architectural decisions.',
+        skills: ['Python', 'AWS', 'Docker', 'Microservices'],
+        matchScore: 90
+      },
+      {
+        id: 'job5',
+        title: 'Marketing Manager',
+        company: 'GrowthLabs',
+        location: 'Boston, MA (Hybrid)',
+        type: 'Full-time',
+        salary: '$100k - $130k',
+        posted: '5 days ago',
+        description: 'Develop and execute marketing strategies to drive customer acquisition and brand awareness. Lead a team of marketing specialists.',
+        skills: ['Marketing Strategy', 'Content Marketing', 'Analytics', 'Team Leadership'],
+        matchScore: 78
+      },
+      {
+        id: 'job6',
+        title: 'Data Scientist',
+        company: 'AI Innovations',
+        location: 'Seattle, WA',
+        type: 'Full-time',
+        salary: '$150k - $190k',
+        posted: '1 week ago',
+        description: 'Build machine learning models to solve complex business problems. Work with large datasets and cutting-edge ML frameworks.',
+        skills: ['Python', 'Machine Learning', 'TensorFlow', 'Statistics'],
+        matchScore: 95
+      }
+    ];
+
+    // ========== UTILITY FUNCTIONS ==========
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast toast-${type} show`;
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function getMatchBadgeClass(score) {
+      if (score >= 85) return 'high';
+      if (score >= 70) return 'medium';
+      return 'low';
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('savedJobs', JSON.stringify(Array.from(state.savedJobs)));
+      localStorage.setItem('preferences', JSON.stringify(state.preferences));
+      updateMetrics();
+    }
+
+    function updateMetrics() {
+      state.metrics.saved = state.savedJobs.size;
+      document.getElementById('jobsSaved').textContent = state.metrics.saved;
+      document.getElementById('jobsReviewed').textContent = state.metrics.reviewed;
+      document.getElementById('jobsApplied').textContent = state.metrics.applied;
+      
+      if (state.metrics.reviewed > 0) {
+        state.metrics.matchRate = Math.round((state.metrics.saved / state.metrics.reviewed) * 100);
+      }
+      document.getElementById('matchRate').textContent = state.metrics.matchRate + '%';
+    }
+
+    // ========== JOB RENDERING ==========
+    function renderJobs() {
+      const jobFeed = document.getElementById('jobFeed');
+      const loadingState = document.getElementById('loadingState');
+      const emptyState = document.getElementById('emptyState');
+
+      if (state.jobs.length === 0) {
+        jobFeed.style.display = 'none';
+        emptyState.style.display = 'block';
+        loadingState.style.display = 'none';
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      loadingState.style.display = 'none';
+      jobFeed.style.display = 'block';
+
+      jobFeed.innerHTML = state.jobs.map(job => `
+        <div class="job-card animate-fade-in" data-job-id="${job.id}">
+          <div class="job-card-header">
+            <div class="job-card-company">
+              <div class="company-logo">${job.company[0]}</div>
+              <div class="company-info">
+                <h3>${job.title}</h3>
+                <div class="company-name">${job.company}</div>
+              </div>
+            </div>
+            <div class="job-card-actions">
+              <button class="action-btn save-btn ${state.savedJobs.has(job.id) ? 'saved' : ''}" data-job-id="${job.id}" title="Save job">
+                ${state.savedJobs.has(job.id) ? '❤️' : '🤍'}
+              </button>
+              <button class="action-btn" title="Share job">🔗</button>
+            </div>
+          </div>
+          
+          <div class="job-card-meta">
+            <span class="meta-tag">📍 ${job.location}</span>
+            <span class="meta-tag">💼 ${job.type}</span>
+            <span class="meta-tag">💰 ${job.salary}</span>
+            <span class="meta-tag">⏰ ${job.posted}</span>
+          </div>
+          
+          <p class="job-card-description">${job.description}</p>
+          
+          <div class="job-card-skills">
+            ${job.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+          </div>
+          
+          <div class="job-card-footer">
+            <div class="match-score">
+              <span style="color: var(--text-secondary); font-size: 0.9rem;">AI Match:</span>
+              <span class="match-badge ${getMatchBadgeClass(job.matchScore)}">${job.matchScore}%</span>
+            </div>
+            <button class="apply-btn" data-job-id="${job.id}">Apply Now →</button>
+          </div>
+        </div>
+      `).join('');
+
+      attachJobCardListeners();
+    }
+
+    function attachJobCardListeners() {
+      // Save buttons
+      document.querySelectorAll('.save-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const jobId = btn.dataset.jobId;
+          toggleSaveJob(jobId);
+        });
+      });
+
+      // Apply buttons
+      document.querySelectorAll('.apply-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const jobId = btn.dataset.jobId;
+          state.metrics.applied++;
+          state.metrics.reviewed++;
+          updateMetrics();
+          showToast('Application started! 🎉', 'success');
+        });
+      });
+
+      // Job card click
+      document.querySelectorAll('.job-card').forEach(card => {
+        card.addEventListener('click', () => {
+          state.metrics.reviewed++;
+          updateMetrics();
+        });
+      });
+    }
+
+    function toggleSaveJob(jobId) {
+      if (state.savedJobs.has(jobId)) {
+        state.savedJobs.delete(jobId);
+        showToast('Job removed from saved', 'info');
+      } else {
+        state.savedJobs.add(jobId);
+        showToast('Job saved! ❤️', 'success');
+      }
+      saveToLocalStorage();
+      renderJobs();
+    }
+
+    // ========== ONBOARDING FLOW ==========
+    let currentStep = 1;
+    let onboardingData = {
+      role: '',
+      location: '',
+      resume: ''
+    };
+
+    function showOnboarding() {
+      document.getElementById('onboardingModal').style.display = 'flex';
+    }
+
+    function hideOnboarding() {
+      document.getElementById('onboardingModal').style.display = 'none';
+      localStorage.setItem('onboarded', 'true');
+      state.onboarded = true;
+      hideWelcomeBanner();
+      loadJobs();
+    }
+
+    function updateProgress() {
+      const progress = (currentStep / 3) * 100;
+      document.querySelector('.progress-bar-fill').style.width = progress + '%';
+      document.getElementById('progressText').textContent = `${currentStep}/3`;
+    }
+
+    function goToStep(step) {
+      document.querySelectorAll('.onboarding-step').forEach(s => s.style.display = 'none');
+      document.getElementById(`step${step}`).style.display = 'block';
+      currentStep = step;
+      updateProgress();
+    }
+
+    // Step 1: Role
+    document.getElementById('roleForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      onboardingData.role = document.getElementById('roleInput').value;
+      goToStep(2);
+    });
+
+    // Step 2: Location
+    document.getElementById('locationForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      onboardingData.location = document.getElementById('locationInput').value;
+      goToStep(3);
+    });
+
+    // Step 3: Resume
+    document.getElementById('uploadArea').addEventListener('click', () => {
+      document.getElementById('resumeFileInput').click();
+    });
+
+    document.getElementById('resumeFileInput').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const fileName = file.name;
+      document.querySelector('.upload-text strong').textContent = fileName;
+      
+      if (file.type === 'application/pdf') {
+        // Handle PDF
+        const text = await extractPDFText(file);
+        document.getElementById('resumeTextarea').value = text;
+      } else {
+        // Handle TXT
+        const text = await file.text();
+        document.getElementById('resumeTextarea').value = text;
+      }
+    });
+
+    async function extractPDFText(file) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map(item => item.str).join(' ');
+          fullText += pageText + '\n';
+        }
+        
+        return fullText;
+      } catch (error) {
+        console.error('PDF extraction error:', error);
+        showToast('Error reading PDF file', 'error');
+        return '';
+      }
+    }
+
+    document.getElementById('resumeForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      onboardingData.resume = document.getElementById('resumeTextarea').value;
+      
+      // Save preferences
+      state.preferences = {
+        role: onboardingData.role,
+        location: onboardingData.location,
+        resume: onboardingData.resume
+      };
+      
+      // Update sidebar inputs
+      document.getElementById('jobTitlesInput').value = onboardingData.role;
+      document.getElementById('locationsInput').value = onboardingData.location;
+      
+      saveToLocalStorage();
+      showToast('Profile created successfully! 🎉', 'success');
+      hideOnboarding();
+    });
+
+    document.getElementById('skipAIBtn').addEventListener('click', () => {
+      hideOnboarding();
+    });
+
+    // ========== WELCOME BANNER ==========
+    function showWelcomeBanner() {
+      document.getElementById('welcomeBanner').style.display = 'block';
+    }
+
+    function hideWelcomeBanner() {
+      document.getElementById('welcomeBanner').style.display = 'none';
+    }
+
+    document.getElementById('startOnboardingBtn')?.addEventListener('click', showOnboarding);
+
+    // ========== PREFERENCES ==========
+    document.getElementById('savePreferencesBtn').addEventListener('click', () => {
+      state.preferences = {
+        role: document.getElementById('jobTitlesInput').value,
+        location: document.getElementById('locationsInput').value,
+        companies: document.getElementById('companiesInput').value,
+        recency: document.getElementById('recencySelect').value
+      };
+      saveToLocalStorage();
+      showToast('Preferences saved!', 'success');
+      loadJobs();
+    });
+
+    // ========== REFRESH FEED ==========
+    document.getElementById('refreshFeedBtn').addEventListener('click', () => {
+      loadJobs();
+      showToast('Feed refreshed!', 'success');
+    });
+
+    // ========== LOAD JOBS ==========
+    function loadJobs() {
+      document.getElementById('loadingState').style.display = 'flex';
+      
+      // Simulate API call
+      setTimeout(() => {
+        state.jobs = mockJobs;
+        renderJobs();
+      }, 1000);
+    }
+
+    // ========== DARK MODE ==========
+    const themeToggle = document.getElementById('themeToggle');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const isDark = document.body.classList.contains('dark-mode');
+      localStorage.setItem('darkMode', isDark);
+    }
+    
+    themeToggle?.addEventListener('click', toggleDarkMode);
+    darkModeToggle?.addEventListener('click', toggleDarkMode);
+    
+    // Load dark mode preference
+    if (localStorage.getItem('darkMode') === 'true') {
+      document.body.classList.add('dark-mode');
+    }
+
+    // ========== AI TOGGLE ==========
+    document.getElementById('aiToggle')?.addEventListener('click', () => {
+      const apiKeySection = document.getElementById('apiKeySection');
+      apiKeySection.style.display = apiKeySection.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // ========== RESET FUNCTIONS ==========
+    document.getElementById('resetMemoryBtn')?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to reset all saved data?')) {
+        localStorage.clear();
+        location.reload();
+      }
+    });
+
+    document.getElementById('resetProfileBtn')?.addEventListener('click', () => {
+      if (confirm('Are you sure you want to reset your profile?')) {
+        localStorage.removeItem('onboarded');
+        localStorage.removeItem('preferences');
+        location.reload();
+      }
+    });
+
+    // ========== INITIALIZATION ==========
+    function init() {
+      console.log('CareerScout initialized');
+      
+      // Check if user is onboarded
+      if (!state.onboarded) {
+        showWelcomeBanner();
+      } else {
+        loadJobs();
+        
+        // Load saved preferences into form
+        if (state.preferences) {
+          document.getElementById('jobTitlesInput').value = state.preferences.role || '';
+          document.getElementById('locationsInput').value = state.preferences.location || '';
+          document.getElementById('companiesInput').value = state.preferences.companies || '';
+        }
+      }
+      
+      updateMetrics();
+    }
+
+    // Start the app
+    init();
+  </script>
 </body>
 </html>
