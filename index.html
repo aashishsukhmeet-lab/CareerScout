@@ -385,7 +385,6 @@
       margin-bottom: var(--spacing-lg);
     }
   </style>
- <link rel="stylesheet" href="chat-widget.css">
 </head>
 <body>
   <!-- Header -->
@@ -1490,20 +1489,6 @@
       
       updateMetrics();
     }
-
-    // Start the app
-    init();
-      <script src="skill-memory.js"></script>
-  <script>
-    // Initialize the skill memory system
-    let skillMemory = new AdaptiveSkillMemory();
-    let chatUI = new ConversationalChatUI(skillMemory);
-    
-    // Optional: Listen for skill updates
-    window.addEventListener('skillGraphUpdated', () => {
-      console.log('Skills updated!');
-      // Refresh job matches or update UI here
-    });
   </script>
 </body>
 </html>
