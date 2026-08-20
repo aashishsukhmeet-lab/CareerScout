@@ -1,0 +1,969 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0
+//
+// ===========================================================================
+//  ABSORPTION CONFLUENCE PRO — S/R Zones + Order Flow          Pine Script v6
+// ===========================================================================
+//  WHY THE OLD SCRIPT SHOWED BOXES AND THE NEW ONE DID NOT
+//  -------------------------------------------------------------------------
+//  OLD:  scaledVol = volume / stdev(volume,100) >= 0.1
+//        On any liquid symbol that ratio lives around 1.0-2.0, so the volume
+//        test was ALWAYS true. The only surviving condition was geometric:
+//        (high+low)/2 >= max(open,close), which is algebraically identical to
+//        "the rejecting wick is >= 50% of the bar range". That fires on
+//        10-20% of bars, which is why boxes were everywhere.
+//
+//  NEW:  three independent box-killers stacked on top of each other -
+//        (1) it never drew a chart-timeframe box at all: dirC was computed and
+//            then fed only into f_score(). Zones existed for tfA/tfB only.
+//        (2) those HTF zones needed volume z-score >= 1.3 (top ~8% of bars)
+//            AND body <= 45% AND wick >= 40%. The intersection is rare.
+//        (3) every other drawing was a setup gated behind score >= 62 and
+//            profReady - a non-var local that is true only when
+//            bar_index % profUpdate == 0, i.e. false on 5 bars out of 6.
+//        It also confirmed HTF zones one full HTF period late.
+//
+//  WHAT THIS SCRIPT DOES INSTEAD
+//  -------------------------------------------------------------------------
+//  1. Draws zones on the CHART timeframe plus up to three higher timeframes,
+//     so there is always at least one stream producing boxes.
+//  2. GRADES instead of GATES. Every qualifying bar becomes a zone. Order
+//     flow, profile location and multi-timeframe stacking set its 0-100 score,
+//     its opacity and its border weight. Score filtering is opt-in (default 0).
+//  3. Fixes HTF timing: a zone is created the moment its higher-timeframe bar
+//     closes and is anchored back over that bar, not one period later.
+//  4. Keeps the pending/confirm state machine, but only in real time, where a
+//     forming higher-timeframe bar actually exists. On history it is skipped,
+//     so history and real time draw the same zones in the same places.
+//  5. Ships a filter-funnel diagnostic table. If you ever see zero boxes again
+//     the table tells you which filter ate them, on which stream.
+//
+//  APPROXIMATION NOTICE
+//  -------------------------------------------------------------------------
+//  Pine has no bid/ask volume per price level. "Delta" here is intrabar volume
+//  signed by where each intrabar closed in its own range, via
+//  request.security_lower_tf(). "Stacked imbalance" is a run of one-sided
+//  intrabars. Both are proxies for real footprint data - useful, not identical.
+//  When intrabar data is unavailable the script falls back to bar-level
+//  approximations and says so in the status table.
+// ===========================================================================
+
+//@version=6
+indicator("Absorption Confluence Pro — S/R Zones + Order Flow", overlay = true,
+     max_boxes_count = 500, max_lines_count = 500, max_labels_count = 500, max_bars_back = 700)
+
+// ===========================================================================
+// GROUPS
+// ===========================================================================
+G_ABS = "1 - What counts as absorption"
+G_TF  = "2 - Timeframes"
+G_OF  = "3 - Order flow (intrabar)"
+G_Z   = "4 - Zone behaviour"
+G_CTX = "5 - Profile context"
+G_SC  = "6 - Zone scoring"
+G_D   = "7 - Display and diagnostics"
+
+// ===========================================================================
+// INPUTS - absorption definition
+// ===========================================================================
+volMode = input.string("Relative volume (x avg)", "Volume filter",
+     options = ["Relative volume (x avg)", "Volume z-score", "Time-of-day z-score", "Legacy (vol / stdev)", "Off (shape only)"],
+     group = G_ABS,
+     tooltip = "Relative volume = volume / SMA(volume). 1.15 means 15% above average - permissive on purpose, because the wick geometry is doing most of the work.\n\nLegacy (vol / stdev) with threshold 0.1 reproduces your old script exactly.\n\nTime-of-day compares each bar only against the same clock minute on previous sessions, which stops the 09:30 and 15:55 volume spikes flagging absorption every single day. Chart timeframe only - higher timeframes fall back to z-score.")
+volThr  = input.float(1.15, "Volume threshold", step = 0.05, minval = 0.0, group = G_ABS,
+     tooltip = "Meaning depends on the mode above. Rel-vol: multiple of average (1.15). Z-score: standard deviations (1.0-1.5). Legacy: 0.1 for old behaviour. Ignored when the filter is Off.")
+volLen  = input.int(100, "Volume baseline length", minval = 20, maxval = 500, group = G_ABS)
+todDays = input.int(20, "Time-of-day: sessions to blend", minval = 3, maxval = 120, group = G_ABS,
+     tooltip = "Each clock minute needs 5 observations before it produces a z-score, so load at least a week of history before judging this mode.")
+minWick = input.float(0.45, "Min rejecting wick / range", step = 0.05, minval = 0.10, maxval = 0.95, group = G_ABS,
+     tooltip = "Your old script was effectively 0.50 here (that is what the mid-price test computes to). Lower = many more zones.")
+maxBody = input.float(0.55, "Max body / range", step = 0.05, minval = 0.05, maxval = 1.0, group = G_ABS,
+     tooltip = "Absorption is heavy volume with LITTLE net progress. A high-volume bar that travels far is displacement, not absorption.")
+reqOF   = input.bool(false, "Require order-flow confirmation", group = G_ABS,
+     tooltip = "ON: a zone only forms if intrabar delta disagrees with the close - aggressive sellers into a low that holds, aggressive buyers into a high that fails. This is the strictest and truest absorption test available in Pine, and it will roughly halve your zone count. OFF: order flow still grades the zone, it just does not veto it.")
+
+// ===========================================================================
+// INPUTS - timeframes
+// ===========================================================================
+useChart = input.bool(true, "Chart timeframe stream", group = G_TF,
+     tooltip = "The stream your old script never had and your new one never drew. Non-repainting: zones appear at bar close.")
+tf1Use = input.bool(true,  "Higher timeframe 1", inline = "t1", group = G_TF)
+tf1    = input.timeframe("5",  "", inline = "t1", group = G_TF)
+tf2Use = input.bool(true,  "Higher timeframe 2", inline = "t2", group = G_TF)
+tf2    = input.timeframe("15", "", inline = "t2", group = G_TF)
+tf3Use = input.bool(true,  "Higher timeframe 3", inline = "t3", group = G_TF)
+tf3    = input.timeframe("60", "", inline = "t3", group = G_TF)
+lifeChart = input.int(60, "Chart-TF zone lifetime (chart bars)", minval = 5, group = G_TF)
+lifeHtf   = input.int(24, "HTF zone lifetime (bars of ITS OWN timeframe)", minval = 2, group = G_TF,
+     tooltip = "Scales automatically: 24 on the 60m stream is 24 hours whatever chart you are on. Your old script used raw chart bars, which meant the same number meant something different on every chart.")
+
+// ===========================================================================
+// INPUTS - order flow
+// ===========================================================================
+ltfMode = input.string("Auto", "Intrabar timeframe", options = ["Auto", "1S", "5S", "10S", "15S", "30S", "1", "5"], group = G_OF,
+     tooltip = "Source for delta, imbalance and unfinished-auction detection. Seconds need a Premium plan. Lower = finer but you hit TradingView's ~100k intrabar cap sooner, so less history gets analysed.")
+ofDeltaThr = input.float(0.22, "Order-flow absorption: min |delta| / volume", step = 0.02, minval = 0.02, maxval = 0.95, group = G_OF,
+     tooltip = "How one-sided the aggression must be before 'they hit it and it did not move' means anything.")
+ofClosePos = input.float(0.60, "Order-flow absorption: min close position", step = 0.05, minval = 0.5, maxval = 0.95, group = G_OF,
+     tooltip = "Where the bar must close in its own range against that aggression. 0.60 = closed in the top 40% while sellers dominated (support) or bottom 40% while buyers dominated (resistance).")
+imbRatio = input.float(0.70, "Intrabar one-sidedness for imbalance", step = 0.05, minval = 0.55, maxval = 1.0, group = G_OF)
+minStack = input.int(3, "Min stacked imbalance run", minval = 2, maxval = 20, group = G_OF)
+unfTicks = input.int(1, "Unfinished-auction tolerance (ticks)", minval = 0, maxval = 20, group = G_OF,
+     tooltip = "The extreme is unfinished if the intrabar that made it closed within this many ticks of it. Unfinished business is a magnet, not support - the score rewards its ABSENCE.")
+divLen  = input.int(20, "Delta divergence lookback", minval = 5, group = G_OF)
+trapLen = input.int(20, "Sweep / trap lookback", minval = 5, group = G_OF)
+
+// ===========================================================================
+// INPUTS - zone behaviour
+// ===========================================================================
+zoneAnchor  = input.string("Wick + ATR buffer", "Zone anchoring", options = ["Wick + ATR buffer", "Wick to body"], group = G_Z,
+     tooltip = "Wick + ATR buffer matches your old script. Wick to body draws the classic order-block rectangle from the extreme to the body edge - wider, and usually where price actually reacts.")
+zoneAtrLen  = input.int(14, "Zone ATR length", minval = 1, group = G_Z)
+zoneAtrMult = input.float(0.25, "Zone width (x that timeframe's ATR)", step = 0.05, minval = 0.05, group = G_Z)
+invUseClose = input.bool(true, "Require a CLOSE to invalidate", group = G_Z,
+     tooltip = "OFF means one wick through the zone kills it, which is why zones vanish instantly on noisy symbols.")
+invTolATR   = input.float(0.10, "Invalidation tolerance (x ATR)", step = 0.05, minval = 0.0, group = G_Z,
+     tooltip = "How far price may poke past the zone edge before the zone dies. Your old script had zero tolerance and wick invalidation, the harshest possible combination.")
+zoneExtend  = input.string("Until invalidated", "Right edge", options = ["Until invalidated", "Fixed lifetime"], group = G_Z)
+declutter   = input.bool(true, "Skip a new zone that overlaps a live one of the same timeframe", group = G_Z)
+showPending = input.bool(true, "Show LIVE forming zones (real time only)", group = G_Z,
+     tooltip = "Dotted preview of a higher-timeframe zone while its bar is still forming. Deleted outright if the condition fails before that bar closes. It is a preview, not a signal.")
+maxZones    = input.int(40, "Max live zones", minval = 4, maxval = 120, group = G_Z)
+maxDead     = input.int(20, "Broken zones kept on chart", minval = 0, maxval = 60, group = G_Z,
+     tooltip = "Faded rectangles showing where zones failed. Old resistance that broke is tomorrow's support.")
+
+// ===========================================================================
+// INPUTS - profile context
+// ===========================================================================
+profOn     = input.bool(true, "Build volume profile", group = G_CTX,
+     tooltip = "Supplies POC / value area (used by the 'responsive location' score) and low-volume voids (the thin air a rejection travels through).")
+profLook   = input.int(200, "Profile window (bars)", minval = 40, maxval = 400, group = G_CTX)
+profBins   = input.int(40, "Profile bins", minval = 12, maxval = 100, group = G_CTX)
+profUpdate = input.int(5, "Rebuild every N bars", minval = 1, maxval = 50, group = G_CTX)
+vaPct      = input.float(0.70, "Value area %", step = 0.05, minval = 0.5, maxval = 0.95, group = G_CTX)
+lvnPct     = input.float(0.28, "LVN threshold (x max bin)", step = 0.02, minval = 0.05, maxval = 0.6, group = G_CTX)
+hvnPct     = input.float(0.62, "HVN threshold (x max bin)", step = 0.02, minval = 0.3, maxval = 1.0, group = G_CTX)
+showVA     = input.bool(true, "Draw POC / VAH / VAL", group = G_CTX)
+showVoids  = input.bool(true, "Draw nearest voids", group = G_CTX)
+maxVoids   = input.int(4, "Voids drawn", minval = 0, maxval = 12, group = G_CTX)
+
+// ===========================================================================
+// INPUTS - scoring
+// ===========================================================================
+minZoneScore = input.int(0, "Minimum score to draw a zone", minval = 0, maxval = 100, group = G_SC,
+     tooltip = "0 draws everything and lets colour and border weight tell you the quality - that is the point of grading rather than gating. Raise to 55-65 once you know what your symbol produces.")
+wVol  = input.float(20, "Weight: volume strength",        minval = 0, group = G_SC)
+wWick = input.float(12, "Weight: wick dominance",         minval = 0, group = G_SC)
+wOF   = input.float(18, "Weight: order-flow absorption",  minval = 0, group = G_SC)
+wDiv  = input.float(12, "Weight: cumulative delta divergence", minval = 0, group = G_SC)
+wTrap = input.float(10, "Weight: trapped traders / sweep", minval = 0, group = G_SC)
+wUnf  = input.float(8,  "Weight: finished auction at the extreme", minval = 0, group = G_SC)
+wImb  = input.float(8,  "Weight: stacked imbalance absorbed", minval = 0, group = G_SC)
+wLoc  = input.float(10, "Weight: responsive location (beyond value)", minval = 0, group = G_SC)
+wConf = input.float(12, "Weight: multi-timeframe stacking", minval = 0, group = G_SC)
+
+// ===========================================================================
+// INPUTS - display
+// ===========================================================================
+showLabels = input.bool(true,  "Zone labels (hover for detail)", group = G_D)
+showMarks  = input.bool(true,  "Order-flow markers on bars", group = G_D)
+tintBars   = input.bool(false, "Tint bars by intrabar delta", group = G_D)
+showTable  = input.bool(true,  "Status / filter-funnel table", group = G_D)
+tblPos     = input.string("Top right", "Table position", options = ["Top right", "Top left", "Bottom right", "Bottom left", "Middle right"], group = G_D)
+
+colBuy  = input.color(color.new(#26a69a, 0), "Support / buy-side",    group = G_D)
+colSell = input.color(color.new(#ef5350, 0), "Resistance / sell-side", group = G_D)
+colVoid = color.new(color.gray, 86)
+colPoc  = color.new(color.orange, 0)
+
+TRP_CHART = 90
+TRP_HTF1  = 86
+TRP_HTF2  = 80
+TRP_HTF3  = 74
+
+// ===========================================================================
+// TIMEFRAME RESOLUTION
+// ===========================================================================
+chartSec = timeframe.in_seconds()
+
+f_tfTag(_tf) =>
+    _s = timeframe.in_seconds(_tf)
+    _s < 60 ? str.tostring(_s) + "s" : _s < 3600 ? str.tostring(int(math.round(_s / 60.0))) + "m" : _s < 86400 ? str.tostring(int(math.round(_s / 3600.0))) + "h" : str.tostring(int(math.round(_s / 86400.0))) + "D"
+
+autoLtf = chartSec >= 3600 ? "5" : chartSec >= 180 ? "1" : chartSec >= 60 ? "15S" : "1S"
+ltfStr  = ltfMode == "Auto" ? autoLtf : ltfMode
+ltfOk   = timeframe.in_seconds(ltfStr) < chartSec
+ltfEff  = ltfOk ? ltfStr : "1S"
+
+tf1Sec = timeframe.in_seconds(tf1)
+tf2Sec = timeframe.in_seconds(tf2)
+tf3Sec = timeframe.in_seconds(tf3)
+tf1On  = tf1Use and tf1Sec > chartSec
+tf2On  = tf2Use and tf2Sec > chartSec
+tf3On  = tf3Use and tf3Sec > chartSec
+back1  = math.max(1, int(math.round(tf1Sec * 1.0 / chartSec)))
+back2  = math.max(1, int(math.round(tf2Sec * 1.0 / chartSec)))
+back3  = math.max(1, int(math.round(tf3Sec * 1.0 / chartSec)))
+tag1   = f_tfTag(tf1)
+tag2   = f_tfTag(tf2)
+tag3   = f_tfTag(tf3)
+tagC   = f_tfTag(timeframe.period)
+
+// ===========================================================================
+// INTRABAR ORDER FLOW
+// delta       : per-intrabar volume signed by close position in its own range
+// upRun/dnRun : longest run of consecutive one-sided intrabars
+// unfHi/unfLo : did the intrabar that made the extreme close AT the extreme?
+// ===========================================================================
+[ibO, ibH, ibL, ibC, ibV] = request.security_lower_tf(syminfo.tickerid, ltfEff, [open, high, low, close, volume])
+ibCount = array.size(ibC)
+ibOk    = ltfOk and ibCount > 1
+
+f_intrabar(_h, _l, _c, _v, _ratio, _tol) =>
+    _n     = array.size(_c)
+    _delta = 0.0
+    _up    = 0
+    _dn    = 0
+    _mxUp  = 0
+    _mxDn  = 0
+    _hiP   = -1.0e15
+    _loP   = 1.0e15
+    _hiC   = 0.0
+    _loC   = 0.0
+    if _n > 0
+        for i = 0 to _n - 1
+            _ic = array.get(_c, i)
+            _ih = array.get(_h, i)
+            _il = array.get(_l, i)
+            _iv = nz(array.get(_v, i))
+            _rg = _ih - _il
+            _ps = _rg > 0 ? (_ic - _il) / _rg : 0.5
+            _delta := _delta + _iv * (2.0 * _ps - 1.0)
+            if _ps >= _ratio
+                _up := _up + 1
+                _dn := 0
+            else if _ps <= 1.0 - _ratio
+                _dn := _dn + 1
+                _up := 0
+            else
+                _up := 0
+                _dn := 0
+            _mxUp := math.max(_mxUp, _up)
+            _mxDn := math.max(_mxDn, _dn)
+            if _ih > _hiP
+                _hiP := _ih
+                _hiC := _ic
+            if _il < _loP
+                _loP := _il
+                _loC := _ic
+    _tolPx = _tol * syminfo.mintick
+    [_delta, _mxUp, _mxDn, _n > 0 and (_hiP - _hiC) <= _tolPx, _n > 0 and (_loC - _loP) <= _tolPx]
+
+[ibDelta, ibUpRun, ibDnRun, ibUnfHi, ibUnfLo] = f_intrabar(ibH, ibL, ibC, ibV, imbRatio, unfTicks)
+
+barRange = high - low
+closePos = barRange > 0 ? (close - low) / barRange : 0.5
+fbDelta  = nz(volume) * (2.0 * closePos - 1.0)
+
+barDelta = ibOk ? ibDelta : fbDelta
+unfHi    = ibOk ? ibUnfHi : (high - math.max(open, close)) <= unfTicks * syminfo.mintick
+unfLo    = ibOk ? ibUnfLo : (math.min(open, close) - low)  <= unfTicks * syminfo.mintick
+stackUp  = ibOk and ibUpRun >= minStack
+stackDn  = ibOk and ibDnRun >= minStack
+
+volNz    = nz(volume)
+deltaPct = volNz > 0 ? barDelta / volNz : 0.0
+cvd      = ta.cum(nz(barDelta))
+
+// ORDER-FLOW ABSORPTION - the truest version available in Pine.
+// Sellers dominated the tape yet the bar closed high  -> passive buyers absorbed.
+// Buyers dominated the tape yet the bar closed low    -> passive sellers absorbed.
+ofAbsBuy  = deltaPct <= -ofDeltaThr and closePos >= ofClosePos
+ofAbsSell = deltaPct >=  ofDeltaThr and closePos <= 1.0 - ofClosePos
+
+// CUMULATIVE DELTA DIVERGENCE
+bullDiv = low  <= ta.lowest(low, divLen)   and cvd > ta.lowest(cvd, divLen)
+bearDiv = high >= ta.highest(high, divLen) and cvd < ta.highest(cvd, divLen)
+
+// TRAPPED TRADERS
+priorHigh = ta.highest(high, trapLen)[1]
+priorLow  = ta.lowest(low,  trapLen)[1]
+trapLong  = not na(priorLow)  and low  < priorLow  and close > priorLow
+trapShort = not na(priorHigh) and high > priorHigh and close < priorHigh
+
+// ===========================================================================
+// VOLUME PROFILE - POC, value area, low-volume voids
+// Bar volume spread uniformly across the bins its range spans. Locates nodes
+// and voids well, misstates their exact volume. profReady is a var, so once
+// the first profile is built it STAYS true (the bug that silenced the old
+// version's setups on 5 bars out of every 6).
+// ===========================================================================
+var float[] prof    = array.new_float(profBins, 0.0)
+var float[] voidTop = array.new_float(0)
+var float[] voidBot = array.new_float(0)
+var box[]   voidBox = array.new<box>()
+var float   poc = na
+var float   vah = na
+var float   val = na
+var bool    profReady = false
+
+winHi = ta.highest(high, profLook)
+winLo = ta.lowest(low,  profLook)
+
+f_buildProfile(_p, _bins, _look, _hi, _lo) =>
+    array.fill(_p, 0.0)
+    _step = (_hi - _lo) / _bins
+    if _step > 0
+        for b = 0 to _look - 1
+            _bh = high[b]
+            _bl = low[b]
+            _bv = nz(volume[b])
+            if not na(_bh) and not na(_bl) and _bv > 0
+                _i0 = math.max(0, math.min(_bins - 1, int(math.floor((_bl - _lo) / _step))))
+                _i1 = math.max(0, math.min(_bins - 1, int(math.floor((_bh - _lo) / _step))))
+                _share = _bv / (_i1 - _i0 + 1)
+                for k = _i0 to _i1
+                    array.set(_p, k, array.get(_p, k) + _share)
+    _step
+
+f_pocIdx(_p) =>
+    _idx = 0
+    _mx  = -1.0
+    for i = 0 to array.size(_p) - 1
+        _v = array.get(_p, i)
+        if _v > _mx
+            _mx := _v
+            _idx := i
+    [_idx, _mx]
+
+f_valueArea(_p, _pocI, _pct) =>
+    _n   = array.size(_p)
+    _tgt = array.sum(_p) * _pct
+    _acc = array.get(_p, _pocI)
+    _up  = _pocI
+    _dn  = _pocI
+    while _acc < _tgt and (_up < _n - 1 or _dn > 0)
+        _vU = _up < _n - 1 ? array.get(_p, _up + 1) : -1.0
+        _vD = _dn > 0      ? array.get(_p, _dn - 1) : -1.0
+        if _vU >= _vD
+            _up := _up + 1
+            _acc := _acc + _vU
+        else
+            _dn := _dn - 1
+            _acc := _acc + _vD
+    [_dn, _up]
+
+// A void needs a real node BOTH above and below it. Without that test the thin
+// tails at the top and bottom of every profile register as voids, which they
+// are not - they are just the edge of the sample.
+f_findVoids(_p, _lo, _step, _lvnT, _hvnT, _vt, _vb) =>
+    array.clear(_vt)
+    array.clear(_vb)
+    _n   = array.size(_p)
+    _pre = array.new_float(_n, 0.0)
+    _suf = array.new_float(_n, 0.0)
+    _run = 0.0
+    for i = 0 to _n - 1
+        _run := math.max(_run, array.get(_p, i))
+        array.set(_pre, i, _run)
+    _run := 0.0
+    for i = _n - 1 to 0
+        _run := math.max(_run, array.get(_p, i))
+        array.set(_suf, i, _run)
+    _in = false
+    _s0 = 0
+    for i = 0 to _n - 1
+        _isLv = array.get(_p, i) <= _lvnT and array.get(_pre, i) >= _hvnT and array.get(_suf, i) >= _hvnT
+        if _isLv and not _in
+            _in := true
+            _s0 := i
+        if not _isLv and _in
+            _in := false
+            array.push(_vb, _lo + _s0 * _step)
+            array.push(_vt, _lo + i * _step)
+    array.size(_vt)
+
+if profOn and bar_index >= profLook and (bar_index % profUpdate == 0 or barstate.islast)
+    _step = f_buildProfile(prof, profBins, profLook, winHi, winLo)
+    if _step > 0
+        [pIdx, pMax] = f_pocIdx(prof)
+        [vaD, vaU]   = f_valueArea(prof, pIdx, vaPct)
+        poc := winLo + (pIdx + 0.5) * _step
+        val := winLo + vaD * _step
+        vah := winLo + (vaU + 1) * _step
+        f_findVoids(prof, winLo, _step, pMax * lvnPct, pMax * hvnPct, voidTop, voidBot)
+        profReady := true
+        if array.size(voidBox) > 0
+            for i = array.size(voidBox) - 1 to 0
+                box.delete(array.get(voidBox, i))
+                array.remove(voidBox, i)
+        if showVoids and maxVoids > 0 and array.size(voidTop) > 0
+            _d = array.new_float(0)
+            for i = 0 to array.size(voidTop) - 1
+                _mid = (array.get(voidTop, i) + array.get(voidBot, i)) / 2.0
+                array.push(_d, math.abs(_mid - close))
+            _ord = array.sort_indices(_d, order.ascending)
+            for k = 0 to math.min(maxVoids, array.size(_ord)) - 1
+                _i = array.get(_ord, k)
+                array.push(voidBox, box.new(bar_index - profLook, array.get(voidTop, _i), bar_index + 8, array.get(voidBot, _i),
+                     bgcolor = colVoid, border_color = color.new(color.gray, 62), border_width = 1))
+
+plot(showVA and profReady and not na(poc) ? poc : na, "POC", color = colPoc, style = plot.style_linebr, linewidth = 2)
+plot(showVA and profReady and not na(vah) ? vah : na, "VAH", color = color.new(color.blue, 45), style = plot.style_linebr)
+plot(showVA and profReady and not na(val) ? val : na, "VAL", color = color.new(color.blue, 45), style = plot.style_linebr)
+
+// RESPONSIVE vs INITIATIVE - absorption reversals want responsive participation
+// arriving from BEYOND value, not initiative aggression from inside it.
+respLong  = not profReady or na(val) ? false : low  <= val
+respShort = not profReady or na(vah) ? false : high >= vah
+
+// ===========================================================================
+// ABSORPTION CORE - one function, run on the chart TF and on each higher TF
+// dir: 1 = sell-side / resistance, -1 = buy-side / support, 0 = none
+// ===========================================================================
+f_abs(_mode, _thr) =>
+    _rng   = high - low
+    _bodyH = math.max(open, close)
+    _bodyL = math.min(open, close)
+    _bodyR = _rng > 0 ? (_bodyH - _bodyL) / _rng : 1.0
+    _uR    = _rng > 0 ? (high - _bodyH) / _rng : 0.0
+    _dR    = _rng > 0 ? (_bodyL - low)  / _rng : 0.0
+    _sma   = ta.sma(volume, volLen)
+    _sd    = ta.stdev(volume, volLen)
+    _rel   = (not na(_sma) and _sma > 0) ? volume / _sma : na
+    _zsc   = (not na(_sd)  and _sd  > 0) ? (volume - _sma) / _sd : na
+    _leg   = (not na(_sd)  and _sd  > 0) ? volume / _sd : na
+    _met   = _mode == "Relative volume (x avg)" ? _rel : _mode == "Legacy (vol / stdev)" ? _leg : _zsc
+    _volOk = _mode == "Off (shape only)" or (not na(_met) and _met >= _thr)
+    _shape = _bodyR <= maxBody and math.max(_uR, _dR) >= minWick
+    _dir   = (_volOk and _shape) ? (_uR >= _dR ? 1 : -1) : 0
+    _vstr  = na(_rel) ? 0.0 : math.min(1.0, math.max(0.0, (_rel - 1.0) / 1.5))
+    _wstr  = math.min(1.0, math.max(0.0, (math.max(_uR, _dR) - minWick) / math.max(1.0 - minWick, 0.05)))
+    [_dir, _vstr, _wstr, high, low, _bodyH, _bodyL, ta.atr(zoneAtrLen)]
+
+// --- time-of-day volume baseline (chart timeframe only) --------------------
+// Intraday volume is a deep U-curve: on SPY the 09:30 and 15:55 bars carry
+// several times the midday volume, so a rolling baseline flags the open and
+// the close as absorption every single session. Each clock minute keeps its
+// own decayed mean and variance, and the z-score uses the state BEFORE this
+// bar is folded in so a bar never contaminates its own baseline.
+var map<int, float> todM = map.new<int, float>()
+var map<int, float> todV = map.new<int, float>()
+var map<int, int>   todN = map.new<int, int>()
+todKey  = hour * 60 + minute
+todA    = 2.0 / (todDays + 1.0)
+mPrev   = map.get(todM, todKey)
+vPrev   = map.get(todV, todKey)
+nPrev   = nz(map.get(todN, todKey))
+todReady = nPrev >= 5 and not na(vPrev) and vPrev > 0
+zTod     = todReady ? (volume - mPrev) / math.sqrt(vPrev) : na
+if not na(volume)
+    map.put(todM, todKey, na(mPrev) ? volume : mPrev + todA * (volume - mPrev))
+    map.put(todV, todKey, na(vPrev) ? 0.0 : (1.0 - todA) * (vPrev + todA * math.pow(volume - mPrev, 2)))
+    map.put(todN, todKey, nPrev + 1)
+
+useTod    = volMode == "Time-of-day z-score"
+chartMode = useTod ? "Off (shape only)" : volMode
+htfMode   = useTod ? "Volume z-score" : volMode
+
+[dirCraw, vstrC, wstrC, hiC, loC, bhC, blC, atrC] = f_abs(chartMode, volThr)
+
+// chart-TF diagnostics + the time-of-day gate
+smaVolC = ta.sma(volume, volLen)
+sdVolC  = ta.stdev(volume, volLen)
+relC    = (not na(smaVolC) and smaVolC > 0) ? volume / smaVolC : na
+zscC    = (not na(sdVolC)  and sdVolC  > 0) ? (volume - smaVolC) / sdVolC : na
+legC    = (not na(sdVolC)  and sdVolC  > 0) ? volume / sdVolC : na
+metC    = volMode == "Relative volume (x avg)" ? relC : volMode == "Volume z-score" ? zscC : useTod ? zTod : volMode == "Legacy (vol / stdev)" ? legC : na
+// while the time-of-day baseline warms up, fall back to relative volume
+todGate = todReady ? (not na(zTod) and zTod >= volThr) : (not na(relC) and relC >= 1.0)
+volOkC  = volMode == "Off (shape only)" ? true : useTod ? todGate : (not na(metC) and metC >= volThr)
+shapeOkC = (high - low) > 0 and math.abs(close - open) / (high - low) <= maxBody and math.max((high - math.max(open, close)) / (high - low), (math.min(open, close) - low) / (high - low)) >= minWick
+
+dirC0 = useTod ? (todGate ? dirCraw : 0) : dirCraw
+// optional order-flow veto
+dirC = reqOF ? (dirC0 == 1 and ofAbsSell ? 1 : dirC0 == -1 and ofAbsBuy ? -1 : 0) : dirC0
+
+[dir1r, vstr1, wstr1, hi1, lo1, bh1, bl1, atr1] = request.security(syminfo.tickerid, tf1, f_abs(htfMode, volThr), lookahead = barmerge.lookahead_off)
+[dir2r, vstr2, wstr2, hi2, lo2, bh2, bl2, atr2] = request.security(syminfo.tickerid, tf2, f_abs(htfMode, volThr), lookahead = barmerge.lookahead_off)
+[dir3r, vstr3, wstr3, hi3, lo3, bh3, bl3, atr3] = request.security(syminfo.tickerid, tf3, f_abs(htfMode, volThr), lookahead = barmerge.lookahead_off)
+
+// The order-flow veto uses chart-timeframe delta, so for a higher timeframe it
+// is applied with the delta accumulated across that timeframe's own period.
+newBar1 = tf1On and timeframe.change(tf1)
+newBar2 = tf2On and timeframe.change(tf2)
+newBar3 = tf3On and timeframe.change(tf3)
+
+var float[] acc1 = array.new_float(1, 0.0)
+var float[] acc2 = array.new_float(1, 0.0)
+var float[] acc3 = array.new_float(1, 0.0)
+var float[] avl1 = array.new_float(1, 0.0)
+var float[] avl2 = array.new_float(1, 0.0)
+var float[] avl3 = array.new_float(1, 0.0)
+
+// Returns the delta/volume of the period that just CLOSED (valid on _isNew)
+// and, for the live pending preview, the delta/volume accumulated so far in
+// the period currently forming.
+f_period(_accD, _accV, _isNew, _d, _v) =>
+    _clD = float(na)
+    _clV = float(na)
+    if _isNew
+        _clD := array.get(_accD, 0)
+        _clV := array.get(_accV, 0)
+        array.set(_accD, 0, 0.0)
+        array.set(_accV, 0, 0.0)
+    array.set(_accD, 0, array.get(_accD, 0) + _d)
+    array.set(_accV, 0, array.get(_accV, 0) + _v)
+    [_isNew ? _clD : array.get(_accD, 0), _isNew ? _clV : array.get(_accV, 0)]
+
+[pd1, pv1] = f_period(acc1, avl1, newBar1, nz(barDelta), volNz)
+[pd2, pv2] = f_period(acc2, avl2, newBar2, nz(barDelta), volNz)
+[pd3, pv3] = f_period(acc3, avl3, newBar3, nz(barDelta), volNz)
+
+// On the boundary bar the higher-timeframe candle that just closed ended on
+// the PREVIOUS chart bar, so that is the close whose position in the HTF range
+// matters. Off the boundary we are grading a still-forming bar, so use this one.
+hCl1 = newBar1 ? close[1] : close
+hCl2 = newBar2 ? close[1] : close
+hCl3 = newBar3 ? close[1] : close
+
+f_ofOk(_dir, _pd, _pv, _hi, _lo, _cl) =>
+    _pct = (not na(_pv) and _pv > 0) ? _pd / _pv : 0.0
+    _pos = (_hi - _lo) > 0 ? (_cl - _lo) / (_hi - _lo) : 0.5
+    _dir == 1 ? (_pct >= ofDeltaThr and _pos <= 1.0 - ofClosePos) : _dir == -1 ? (_pct <= -ofDeltaThr and _pos >= ofClosePos) : false
+
+dir1 = reqOF ? (f_ofOk(dir1r, pd1, pv1, hi1, lo1, hCl1) ? dir1r : 0) : dir1r
+dir2 = reqOF ? (f_ofOk(dir2r, pd2, pv2, hi2, lo2, hCl2) ? dir2r : 0) : dir2r
+dir3 = reqOF ? (f_ofOk(dir3r, pd3, pv3, hi3, lo3, hCl3) ? dir3r : 0) : dir3r
+
+// ===========================================================================
+// ZONE ENGINE
+// ===========================================================================
+type Zone
+    box    bx
+    line   ln
+    label  lb
+    float  top
+    float  bot
+    float  lvl
+    float  inv
+    bool   isSell
+    int    born
+    int    expire
+    int    tests
+    int    conf
+    int    score
+    float  dlt
+    string tag
+    color  cl
+    int    tr
+    bool   broken
+
+var Zone[] zones  = array.new<Zone>()
+var Zone[] graves = array.new<Zone>()
+var Zone[] pendC  = array.new<Zone>()
+var Zone[] pend1  = array.new<Zone>()
+var Zone[] pend2  = array.new<Zone>()
+var Zone[] pend3  = array.new<Zone>()
+
+f_bounds(_isSell, _hi, _lo, _bh, _bl, _buf) =>
+    float _top = na
+    float _bot = na
+    if zoneAnchor == "Wick to body"
+        _top := _isSell ? _hi : _bl
+        _bot := _isSell ? _bh : _lo
+        _mw = _buf * 0.5
+        if _top - _bot < _mw
+            if _isSell
+                _bot := _top - _mw
+            else
+                _top := _bot + _mw
+    else
+        _top := _isSell ? _hi : _lo + _buf
+        _bot := _isSell ? _hi - _buf : _lo
+    [_top, _bot]
+
+f_zTag(_z) =>
+    (_z.isSell ? "▼ " : "▲ ") + _z.tag + " " + str.tostring(_z.score) + (_z.tests > 0 ? " x" + str.tostring(_z.tests) : "") + (_z.conf > 0 ? " +" + str.tostring(_z.conf) : "")
+
+f_zTip(_z) =>
+    "ABSORPTION ZONE  " + _z.tag +
+     "\nSide          " + (_z.isSell ? "sell-side / resistance" : "buy-side / support") +
+     "\nScore         " + str.tostring(_z.score) + " / 100" +
+     "\nRange         " + str.tostring(_z.bot, format.mintick) + "  to  " + str.tostring(_z.top, format.mintick) +
+     "\nInvalidation  " + str.tostring(_z.inv, format.mintick) + (invUseClose ? "  (close)" : "  (wick)") +
+     "\nDelta at form " + str.tostring(_z.dlt, "#") +
+     "\nStacked with  " + str.tostring(_z.conf) + " same-side zone(s)" +
+     "\nHeld          " + str.tostring(_z.tests) + " time(s)"
+
+f_zDel(_z) =>
+    box.delete(_z.bx)
+    line.delete(_z.ln)
+    if not na(_z.lb)
+        label.delete(_z.lb)
+
+f_zNew(_isSell, _hi, _lo, _bh, _bl, _atrTf, _tag, _tr, _left, _right, _score, _dlt, _pending) =>
+    _c   = _isSell ? colSell : colBuy
+    _buf = math.max(nz(_atrTf) * zoneAtrMult, syminfo.mintick * 2)
+    [_top, _bot] = f_bounds(_isSell, _hi, _lo, _bh, _bl, _buf)
+    _tp  = _pending ? math.min(_tr + 6, 95) : _tr
+    _bx  = box.new(_left, _top, _right, _bot, bgcolor = color.new(_c, _tp),
+             border_color = color.new(_c, math.max(_tp - 30, 0)), border_width = 1,
+             border_style = _pending ? line.style_dotted : line.style_solid)
+    _ln  = line.new(_left, _isSell ? _hi : _lo, _right, _isSell ? _hi : _lo, color = color.new(_c, 30), style = line.style_dashed)
+    label _lb = na
+    if showLabels and not _pending
+        _lb := label.new(_right, _isSell ? _top : _bot, "",
+                 style = _isSell ? label.style_label_down : label.style_label_up,
+                 color = color.new(_c, 82), textcolor = color.new(_c, 0), size = size.tiny)
+    _z = Zone.new(_bx, _ln, _lb, _top, _bot, _isSell ? _hi : _lo, float(na), _isSell, bar_index, int(na), 0, 0, _score, _dlt, _tag, _c, _tr, false)
+    if not na(_lb)
+        label.set_text(_lb, f_zTag(_z))
+        label.set_tooltip(_lb, f_zTip(_z))
+    _z
+
+f_zUpdate(_z, _hi, _lo, _bh, _bl, _atrTf) =>
+    _buf = math.max(nz(_atrTf) * zoneAtrMult, syminfo.mintick * 2)
+    [_top, _bot] = f_bounds(_z.isSell, _hi, _lo, _bh, _bl, _buf)
+    _z.top := _top
+    _z.bot := _bot
+    _z.lvl := _z.isSell ? _hi : _lo
+    box.set_top(_z.bx, _top)
+    box.set_bottom(_z.bx, _bot)
+    box.set_right(_z.bx, bar_index + 1)
+    line.set_y1(_z.ln, _z.lvl)
+    line.set_y2(_z.ln, _z.lvl)
+    line.set_x2(_z.ln, bar_index + 1)
+
+f_zConfirm(_z, _life, _atrTf) =>
+    _tol = invTolATR * math.max(nz(_atrTf), syminfo.mintick)
+    _z.inv    := _z.isSell ? _z.top + _tol : _z.bot - _tol
+    _z.born   := bar_index
+    _z.expire := bar_index + _life
+    box.set_border_style(_z.bx, line.style_solid)
+    box.set_right(_z.bx, bar_index + 2)
+    line.set_x2(_z.ln, bar_index + 2)
+    if not na(_z.lb)
+        label.set_x(_z.lb, bar_index + 2)
+        label.set_text(_z.lb, f_zTag(_z))
+        label.set_tooltip(_z.lb, f_zTip(_z))
+
+f_zBreak(_z) =>
+    _z.broken := true
+    box.set_right(_z.bx, bar_index)
+    box.set_bgcolor(_z.bx, color.new(_z.cl, 95))
+    box.set_border_color(_z.bx, color.new(_z.cl, 80))
+    box.set_border_style(_z.bx, line.style_dotted)
+    box.set_border_width(_z.bx, 1)
+    line.set_x2(_z.ln, bar_index)
+    line.set_color(_z.ln, color.new(_z.cl, 85))
+    if not na(_z.lb)
+        label.delete(_z.lb)
+        _z.lb := label(na)
+
+f_overlap(_isSell, _px) =>
+    _c = 0
+    if array.size(zones) > 0
+        for i = 0 to array.size(zones) - 1
+            _z = array.get(zones, i)
+            if _z.isSell == _isSell and _px <= _z.top and _px >= _z.bot
+                _c := _c + 1
+    _c
+
+// --- maintenance: expiry, invalidation, hold-counting, right-edge extension -
+f_maintain(_zs, _gv) =>
+    _chg   = false
+    _broke = false
+    _ext   = zoneExtend == "Until invalidated"
+    if array.size(_zs) > 0
+        for i = array.size(_zs) - 1 to 0
+            _z    = array.get(_zs, i)
+            _kill = 0
+            if not na(_z.expire) and bar_index >= _z.expire
+                _kill := 1
+            else if bar_index > _z.born
+                _brk = _z.isSell ? (invUseClose ? close > _z.inv : high > _z.inv) : (invUseClose ? close < _z.inv : low < _z.inv)
+                if _brk
+                    _kill := 2
+                else
+                    _held = _z.isSell ? (high >= _z.bot and close < _z.bot) : (low <= _z.top and close > _z.top)
+                    if _held
+                        _z.tests := _z.tests + 1
+                        if not na(_z.lb)
+                            label.set_text(_z.lb, f_zTag(_z))
+                            label.set_tooltip(_z.lb, f_zTip(_z))
+                    if _ext
+                        _r = math.min(bar_index + 2, _z.expire)
+                        box.set_right(_z.bx, _r)
+                        line.set_x2(_z.ln, _r)
+                        if not na(_z.lb)
+                            label.set_x(_z.lb, _r)
+            if _kill == 1
+                f_zDel(_z)
+                array.remove(_zs, i)
+                _chg := true
+            else if _kill == 2
+                f_zBreak(_z)
+                array.push(_gv, _z)
+                array.remove(_zs, i)
+                _chg   := true
+                _broke := true
+    while array.size(_gv) > maxDead
+        f_zDel(array.get(_gv, 0))
+        array.remove(_gv, 0)
+    while array.size(_zs) > maxZones
+        f_zDel(array.get(_zs, 0))
+        array.remove(_zs, 0)
+        _chg := true
+    [_chg, _broke]
+
+// --- confluence: overlapping same-side zones darken and thicken -------------
+f_confluence(_zs) =>
+    _n = array.size(_zs)
+    if _n > 0
+        for i = 0 to _n - 1
+            _a = array.get(_zs, i)
+            _c = 0
+            for j = 0 to _n - 1
+                if i != j
+                    _b = array.get(_zs, j)
+                    if _b.isSell == _a.isSell and _a.top >= _b.bot and _a.bot <= _b.top
+                        _c := _c + 1
+            if _a.conf != _c
+                _a.conf := _c
+                if not na(_a.lb)
+                    label.set_text(_a.lb, f_zTag(_a))
+                    label.set_tooltip(_a.lb, f_zTip(_a))
+            _t = math.max(_a.tr - _c * 10, 45)
+            box.set_bgcolor(_a.bx, color.new(_a.cl, _t))
+            box.set_border_color(_a.bx, color.new(_a.cl, math.max(_t - 30, 0)))
+            box.set_border_width(_a.bx, math.min(1 + _c, 4))
+    _n
+
+[maintChg, zoneBroke] = f_maintain(zones, graves)
+
+// ===========================================================================
+// SCORING - weighted confluence, normalised to 0-100.
+// Grades the zone; it does not gate it unless you raise minZoneScore.
+// ===========================================================================
+wSum      = math.max(wVol + wWick + wOF + wDiv + wTrap + wUnf + wImb + wLoc + wConf, 1.0)
+confLong  = f_overlap(false, low)
+confShort = f_overlap(true,  high)
+
+f_score(_isLong, _vstr, _wstr) =>
+    _s = 0.0
+    _s := _s + wVol  * nz(_vstr)
+    _s := _s + wWick * nz(_wstr)
+    _s := _s + wOF   * ((_isLong ? ofAbsBuy  : ofAbsSell) ? 1.0 : 0.0)
+    _s := _s + wDiv  * ((_isLong ? bullDiv   : bearDiv)   ? 1.0 : 0.0)
+    _s := _s + wTrap * ((_isLong ? trapLong  : trapShort) ? 1.0 : 0.0)
+    _s := _s + wUnf  * ((_isLong ? not unfLo : not unfHi) ? 1.0 : 0.0)
+    _s := _s + wImb  * ((_isLong ? stackDn   : stackUp)   ? 1.0 : 0.0)
+    _s := _s + wLoc  * ((_isLong ? respLong  : respShort) ? 1.0 : 0.0)
+    _s := _s + wConf * math.min(1.0, (_isLong ? confLong : confShort) / 2.0)
+    int(math.round(100.0 * _s / wSum))
+
+scLC = f_score(true,  vstrC, wstrC)
+scSC = f_score(false, vstrC, wstrC)
+scL1 = f_score(true,  vstr1, wstr1)
+scS1 = f_score(false, vstr1, wstr1)
+scL2 = f_score(true,  vstr2, wstr2)
+scS2 = f_score(false, vstr2, wstr2)
+scL3 = f_score(true,  vstr3, wstr3)
+scS3 = f_score(false, vstr3, wstr3)
+
+// ===========================================================================
+// STREAM DRIVER
+// boundary = the bar on which this stream's candle has just closed.
+//   chart TF : barstate.isconfirmed
+//   higher TF: timeframe.change(tf) - at which point request.security with
+//              lookahead_off is serving the bar that just completed, so the
+//              zone is drawn immediately and anchored back over it.
+// Between boundaries, and only in real time, a dotted PENDING zone previews
+// the still-forming higher-timeframe bar and is deleted if the condition
+// fails. On history there is no forming bar, so pending is skipped entirely -
+// history and real time therefore draw identical zones.
+// ===========================================================================
+f_stream(_pend, _zs, _en, _boundary, _dir, _hi, _lo, _bh, _bl, _atrTf, _tag, _tr, _life, _back, _dlt, _scL, _scS) =>
+    _res = 0
+    if _en
+        if _boundary
+            if array.size(_pend) > 0
+                f_zDel(array.get(_pend, 0))
+                array.clear(_pend)
+            if _dir != 0
+                _isSell = _dir == 1
+                _sc     = _isSell ? _scS : _scL
+                if _sc >= minZoneScore
+                    _skip = false
+                    if declutter and array.size(_zs) > 0
+                        for i = 0 to array.size(_zs) - 1
+                            _o = array.get(_zs, i)
+                            if _o.tag == _tag and _o.isSell == _isSell
+                                _lv = _isSell ? _hi : _lo
+                                if _lv <= _o.top and _lv >= _o.bot
+                                    _skip := true
+                                    break
+                    if not _skip
+                        _z = f_zNew(_isSell, _hi, _lo, _bh, _bl, _atrTf, _tag, _tr, bar_index - _back, bar_index + 2, _sc, _dlt, false)
+                        f_zConfirm(_z, _life, _atrTf)
+                        array.push(_zs, _z)
+                        _res := _dir
+        else if barstate.isrealtime and showPending
+            if _dir != 0
+                _isSell = _dir == 1
+                if array.size(_pend) == 0 or array.get(_pend, 0).isSell != _isSell
+                    if array.size(_pend) > 0
+                        f_zDel(array.get(_pend, 0))
+                        array.clear(_pend)
+                    array.push(_pend, f_zNew(_isSell, _hi, _lo, _bh, _bl, _atrTf, _tag, _tr, bar_index - _back, bar_index + 1, _isSell ? _scS : _scL, _dlt, true))
+                else
+                    f_zUpdate(array.get(_pend, 0), _hi, _lo, _bh, _bl, _atrTf)
+            else if array.size(_pend) > 0
+                f_zDel(array.get(_pend, 0))
+                array.clear(_pend)
+    _res
+
+resC = f_stream(pendC, zones, useChart, barstate.isconfirmed, dirC, hiC, loC, bhC, blC, atrC, tagC, TRP_CHART, lifeChart,          0,     nz(barDelta), scLC, scSC)
+res1 = f_stream(pend1, zones, tf1On,    newBar1,               dir1, hi1, lo1, bh1, bl1, atr1, tag1, TRP_HTF1,  lifeHtf * back1, back1, nz(pd1),      scL1, scS1)
+res2 = f_stream(pend2, zones, tf2On,    newBar2,               dir2, hi2, lo2, bh2, bl2, atr2, tag2, TRP_HTF2,  lifeHtf * back2, back2, nz(pd2),      scL2, scS2)
+res3 = f_stream(pend3, zones, tf3On,    newBar3,               dir3, hi3, lo3, bh3, bl3, atr3, tag3, TRP_HTF3,  lifeHtf * back3, back3, nz(pd3),      scL3, scS3)
+
+zoneAdded = resC != 0 or res1 != 0 or res2 != 0 or res3 != 0
+newSell   = resC == 1  or res1 == 1  or res2 == 1  or res3 == 1
+newBuy    = resC == -1 or res1 == -1 or res2 == -1 or res3 == -1
+
+if zoneAdded or maintChg or barstate.islast
+    f_confluence(zones)
+
+// ===========================================================================
+// LIVE READOUT - where price is relative to the zone map
+// ===========================================================================
+f_nearest(_isSell, _above) =>
+    _best = float(na)
+    if array.size(zones) > 0
+        for i = 0 to array.size(zones) - 1
+            _z = array.get(zones, i)
+            if _z.isSell == _isSell
+                _e = _above ? _z.bot : _z.top
+                if _above and _e > close and (na(_best) or _e < _best)
+                    _best := _e
+                if not _above and _e < close and (na(_best) or _e > _best)
+                    _best := _e
+    _best
+
+nextRes = f_nearest(true,  true)
+nextSup = f_nearest(false, false)
+inSell  = f_overlap(true,  close) > 0
+inBuy   = f_overlap(false, close) > 0
+zoneEntered = (inSell and not inSell[1]) or (inBuy and not inBuy[1])
+
+// ===========================================================================
+// BAR MARKERS
+// ===========================================================================
+plotshape(showMarks and dirC == -1 ? low  : na, "Support absorption",    style = shape.triangleup,   location = location.absolute, color = colBuy,  size = size.tiny, offset = 0)
+plotshape(showMarks and dirC ==  1 ? high : na, "Resistance absorption", style = shape.triangledown, location = location.absolute, color = colSell, size = size.tiny, offset = 0)
+plotchar(showMarks and ibOk and unfHi ? high : na, "Unfinished high", "·", location.absolute, color = color.new(color.orange, 20), size = size.tiny)
+plotchar(showMarks and ibOk and unfLo ? low  : na, "Unfinished low",  "·", location.absolute, color = color.new(color.orange, 20), size = size.tiny)
+plotchar(showMarks and stackUp ? high : na, "Stacked buy imbalance",  "|", location.absolute, color = color.new(colBuy, 45),  size = size.tiny)
+plotchar(showMarks and stackDn ? low  : na, "Stacked sell imbalance", "|", location.absolute, color = color.new(colSell, 45), size = size.tiny)
+barcolor(tintBars ? color.new(deltaPct >= 0 ? colBuy : colSell, int(math.max(20.0, 90.0 - math.abs(deltaPct) * 110.0))) : na, title = "Delta tint")
+
+plot(cvd, "Cumulative delta", display = display.data_window)
+plot(nz(metC), "Volume metric", display = display.data_window)
+
+// ===========================================================================
+// FILTER FUNNEL - counted over every closed bar of the loaded history.
+// If you ever see zero boxes again, this row pair tells you which filter ate
+// them before you touch a single other input.
+// ===========================================================================
+var int cBars  = 0
+var int cShape = 0
+var int cVol   = 0
+var int cBoth  = 0
+if barstate.isconfirmed
+    cBars := cBars + 1
+    if shapeOkC
+        cShape := cShape + 1
+    if volOkC
+        cVol := cVol + 1
+    if shapeOkC and volOkC
+        cBoth := cBoth + 1
+
+f_pct(_n, _d) => _d > 0 ? str.tostring(100.0 * _n / _d, "#.#") + "%" : "—"
+
+// ===========================================================================
+// STATUS TABLE
+// ===========================================================================
+tPos = tblPos == "Top left" ? position.top_left : tblPos == "Bottom right" ? position.bottom_right : tblPos == "Bottom left" ? position.bottom_left : tblPos == "Middle right" ? position.middle_right : position.top_right
+var table t = table.new(tPos, 2, 15, border_width = 1, frame_width = 1, frame_color = color.new(color.gray, 55), bgcolor = color.new(color.black, 82))
+f_cell(_c, _r, _s, _col) => table.cell(t, _c, _r, _s, text_size = size.tiny, text_color = _col, text_halign = _c == 0 ? text.align_left : text.align_right)
+
+if showTable and barstate.islast
+    _noVol = na(volume) or nz(ta.sma(volume, 20)) == 0
+    f_cell(0, 0, "ABSORPTION CONFLUENCE", color.new(color.white, 20))
+    f_cell(1, 0, str.tostring(array.size(zones)) + " live / " + str.tostring(array.size(graves)) + " broken", color.silver)
+
+    f_cell(0, 1, "Volume data", color.gray)
+    f_cell(1, 1, _noVol ? "MISSING — use SPY/QQQ/ES, not SPX" : "ok", _noVol ? color.orange : color.teal)
+
+    f_cell(0, 2, "Intrabar TF", color.gray)
+    f_cell(1, 2, ltfOk ? ltfEff + "  (" + str.tostring(ibCount) + " bars)" : "unavailable", ibOk ? color.teal : color.orange)
+
+    f_cell(0, 3, "Delta source", color.gray)
+    f_cell(1, 3, ibOk ? "intrabar close-position" : "bar close-position (coarse)", ibOk ? color.teal : color.orange)
+
+    f_cell(0, 4, "Streams", color.gray)
+    f_cell(1, 4, (useChart ? tagC : "—") + " / " + (tf1On ? tag1 : tag1 + " off") + " / " + (tf2On ? tag2 : tag2 + " off") + " / " + (tf3On ? tag3 : tag3 + " off"),
+         (useChart or tf1On or tf2On or tf3On) ? color.teal : color.red)
+
+    f_cell(0, 5, "Volume filter", color.gray)
+    f_cell(1, 5, volMode == "Off (shape only)" ? "off — shape only" : (useTod and not todReady ? "time-of-day warming up (rel-vol fallback)" : volMode + " ≥ " + str.tostring(volThr, "#.##")),
+         (useTod and not todReady) ? color.orange : color.teal)
+
+    f_cell(0, 6, "This bar's metric", color.gray)
+    f_cell(1, 6, na(metC) ? "—" : str.tostring(metC, "#.##") + (volOkC ? "  PASS" : "  fail"), volOkC ? color.teal : color.silver)
+
+    f_cell(0, 7, "FUNNEL  shape ok", color.gray)
+    f_cell(1, 7, str.tostring(cShape) + "  (" + f_pct(cShape, cBars) + " of " + str.tostring(cBars) + ")", cShape > 0 ? color.silver : color.red)
+
+    f_cell(0, 8, "FUNNEL  volume ok", color.gray)
+    f_cell(1, 8, str.tostring(cVol) + "  (" + f_pct(cVol, cBars) + ")", cVol > 0 ? color.silver : color.red)
+
+    f_cell(0, 9, "FUNNEL  both — zones", color.gray)
+    f_cell(1, 9, str.tostring(cBoth) + "  (" + f_pct(cBoth, cBars) + ")", cBoth > 0 ? color.teal : color.red)
+
+    f_cell(0, 10, "Order flow this bar", color.gray)
+    f_cell(1, 10, str.tostring(deltaPct * 100.0, "#") + "% delta" + (ofAbsBuy ? "  ABS-BUY" : ofAbsSell ? "  ABS-SELL" : ""), ofAbsBuy ? colBuy : ofAbsSell ? colSell : color.silver)
+
+    f_cell(0, 11, "Score L / S now", color.gray)
+    f_cell(1, 11, str.tostring(scLC) + " / " + str.tostring(scSC), color.silver)
+
+    f_cell(0, 12, "Profile", color.gray)
+    f_cell(1, 12, not profOn ? "off" : profReady ? str.tostring(array.size(voidTop)) + " voids · POC " + str.tostring(poc, format.mintick) : "warming up", profReady or not profOn ? color.teal : color.gray)
+
+    f_cell(0, 13, "Next resistance", color.gray)
+    f_cell(1, 13, na(nextRes) ? "—" : str.tostring(nextRes, format.mintick), na(nextRes) ? color.gray : colSell)
+
+    f_cell(0, 14, "Next support", color.gray)
+    f_cell(1, 14, na(nextSup) ? "—" : str.tostring(nextSup, format.mintick), na(nextSup) ? color.gray : colBuy)
+
+// ===========================================================================
+// ALERTS
+// ===========================================================================
+alertcondition(newBuy,      "New support absorption zone",    "Absorption: new buy-side / support zone")
+alertcondition(newSell,     "New resistance absorption zone", "Absorption: new sell-side / resistance zone")
+alertcondition(zoneEntered, "Price entered an absorption zone", "Absorption: price entered a zone")
+alertcondition(zoneBroke,   "Absorption zone broken",         "Absorption: a zone was invalidated")
+
+if zoneAdded
+    alert((newSell ? "RESISTANCE" : "SUPPORT") + " absorption  " + syminfo.ticker + " " + timeframe.period +
+          " | score " + str.tostring(newSell ? math.max(math.max(scSC, scS1), math.max(scS2, scS3)) : math.max(math.max(scLC, scL1), math.max(scL2, scL3))) +
+          " | price " + str.tostring(close, format.mintick) +
+          " | delta " + str.tostring(deltaPct * 100.0, "#") + "%" +
+          " | live zones " + str.tostring(array.size(zones)), alert.freq_once_per_bar_close)
+
+if zoneEntered
+    alert("ZONE ENTRY " + syminfo.ticker + " @ " + str.tostring(close, format.mintick) +
+          " | " + (inSell ? "resistance" : "support") +
+          " | delta " + str.tostring(deltaPct * 100.0, "#") + "%" +
+          (ofAbsBuy ? " | buyers absorbing" : ofAbsSell ? " | sellers absorbing" : ""), alert.freq_once_per_bar_close)
