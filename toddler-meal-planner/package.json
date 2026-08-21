@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "verify": "node scripts/verify.mjs",
+    "icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
     "react": "^19.1.0",

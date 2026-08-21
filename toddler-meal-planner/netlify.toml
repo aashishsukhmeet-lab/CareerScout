@@ -1,0 +1,17 @@
+# Set the site's base directory to `toddler-meal-planner` in the Netlify UI —
+# this app lives in a subdirectory of the repo.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# The service worker must never be served stale, or an update can take days to
+# reach a phone that already has the app installed.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

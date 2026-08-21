@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="warm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#BE5533"/>
+      <stop offset="1" stop-color="#8E3820"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#warm)"/>
+  <!-- translated up so the mark sits optically centred, not maths centred -->
+  <g id="art" transform="translate(0,-14)">
+    <g fill="none" stroke="#FBF1E4" stroke-linecap="round" stroke-width="20" opacity="0.9">
+      <path d="M214 128c0 22 20 26 20 48s-20 26-20 48"/>
+      <path d="M298 128c0 22 20 26 20 48s-20 26-20 48"/>
+    </g>
+    <path d="M126 274h260a130 130 0 0 1-260 0Z" fill="#FBF1E4"/>
+    <rect x="86" y="418" width="340" height="22" rx="11" fill="#FBF1E4"/>
+  </g>
+</svg>
