@@ -155,6 +155,29 @@ export const SUPPLEMENTS = [
 
 export type SupplementId = (typeof SUPPLEMENTS)[number]['id'];
 
+/**
+ * The plan's "Daily Add-Ins" — the three things that go into whatever is
+ * already being cooked. Easy to forget precisely because they belong to no
+ * particular meal, which is why Today shows them every day.
+ */
+export const DAILY_ADD_INS = [
+  {
+    id: 'ghee',
+    name: 'Ghee',
+    detail: 'In nearly everything — he needs the fat, not less of it',
+  },
+  {
+    id: 'omega3',
+    name: 'Ground flax, chia or walnut',
+    detail: 'Half a teaspoon stirred into porridge, oatmeal or yogurt',
+  },
+  {
+    id: 'zinc',
+    name: 'Pumpkin seed powder',
+    detail: 'A sprinkle, for zinc',
+  },
+] as const;
+
 // ------------------------------------------------------------------ day tags
 
 /** Every tag present across a day's five meals, deduped. */

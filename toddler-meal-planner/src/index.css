@@ -1,1 +1,119 @@
 @import 'tailwindcss';
+
+/*
+ * Warm, calm, high contrast. This gets read one-handed at 6am while holding a
+ * toddler, so: large type, generous spacing, nothing that needs precision.
+ *
+ * Dark mode is handled entirely here — the palette swaps under a media query
+ * and every token below points at a CSS variable, so no component carries a
+ * `dark:` variant.
+ */
+
+:root {
+  --paper: #fbf6ee;
+  --paper-edge: #f2e9db;
+  --card: #ffffff;
+  --ink: #1f1811;
+  --ink-soft: #6a5b4a;
+  --line: #e7dbc9;
+  --line-strong: #d6c5ac;
+
+  --accent: #a8442a;
+  --accent-ink: #8f3921;
+  --accent-soft: #f7e6de;
+
+  --citrus: #8a5a00;
+  --citrus-soft: #fbedd3;
+
+  --warn: #9b3b22;
+  --warn-soft: #fae2da;
+
+  --done: #38623b;
+  --done-soft: #e2efe0;
+
+  --shadow: 0 1px 2px rgb(31 24 17 / 0.06), 0 6px 16px -8px rgb(31 24 17 / 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #15110d;
+    --paper-edge: #1b1611;
+    --card: #201b15;
+    --ink: #f6efe4;
+    --ink-soft: #ab9c88;
+    --line: #33291f;
+    --line-strong: #4a3c2d;
+
+    --accent: #ef9070;
+    --accent-ink: #f4a98d;
+    --accent-soft: #3b2318;
+
+    --citrus: #e9b45f;
+    --citrus-soft: #372811;
+
+    --warn: #f0917a;
+    --warn-soft: #3b1e16;
+
+    --done: #94ca94;
+    --done-soft: #1d2c1e;
+
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px -8px rgb(0 0 0 / 0.6);
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-edge: var(--paper-edge);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-citrus: var(--citrus);
+  --color-citrus-soft: var(--citrus-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-done: var(--done);
+  --color-done-soft: var(--done-soft);
+
+  --font-sans:
+    ui-rounded, 'SF Pro Rounded', system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', sans-serif;
+
+  --shadow-card: var(--shadow);
+}
+
+html {
+  background-color: var(--paper);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  /* Nothing here should ever scroll sideways on a phone. */
+  overflow-x: hidden;
+  /* Stops iOS blue-flash on every tap of a card. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Respect the notch and the home indicator when installed to the home screen. */
+.pt-safe {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

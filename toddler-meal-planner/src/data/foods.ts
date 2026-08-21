@@ -23,7 +23,7 @@ export const FOODS: Food[] = [
   // ---------------------------------------------------------------- breakfast
   {
     id: 'banana-oatmeal-flax',
-    name: 'Banana oatmeal with ground flaxseed',
+    name: 'Banana oatmeal + flaxseed',
     slots: ['breakfast'],
     tags: ['iron', 'omega3', 'fat', 'calcium'],
     why: 'Half a teaspoon of flax is the omega-3 his brain is building with; oats bring the iron.',
@@ -39,7 +39,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'ragi-porridge',
-    name: 'Ragi porridge with jaggery and ghee',
+    name: 'Ragi porridge with jaggery',
     slots: ['breakfast'],
     tags: ['iron', 'calcium', 'fat'],
     why: 'Ragi is the most calcium-dense grain on the plan, and the jaggery stacks iron on top.',
@@ -56,13 +56,13 @@ export const FOODS: Food[] = [
   },
   {
     id: 'besan-chilla-veg',
-    name: 'Besan chilla with grated zucchini and carrot',
+    name: 'Besan chilla with vegetables',
     slots: ['breakfast', 'afternoonSnack'],
     tags: ['iron', 'protein', 'choline'],
     why: 'Gram flour carries iron and protein, and grated vegetables disappear into the batter.',
     prepMinutes: 15,
     needsVitaminC: true,
-    notes: 'No chili. Cut into strips he can hold himself.',
+    notes: 'Grated zucchini and carrot in the batter. No chili, cut into strips he can hold.',
     ingredients: [
       { item: 'besan (gram flour)', category: 'grainsAndLentils' },
       { item: 'zucchini', category: 'produce' },
@@ -73,12 +73,12 @@ export const FOODS: Food[] = [
   },
   {
     id: 'poha',
-    name: 'Poha with peas, carrot and lemon',
+    name: 'Poha with peas and carrot',
     slots: ['breakfast'],
     tags: ['iron', 'vitaminC'],
     why: 'Flattened rice is usually iron-fortified, and the lemon is what makes that iron absorbable.',
     prepMinutes: 15,
-    notes: 'Soft-cook the peas and crush them lightly — whole peas roll away.',
+    notes: 'Squeeze the lemon in at the end. Soft-cook the peas and crush them lightly.',
     ingredients: [
       { item: 'poha (flattened rice)', category: 'grainsAndLentils' },
       { item: 'green peas', category: 'produce' },
@@ -89,13 +89,13 @@ export const FOODS: Food[] = [
   },
   {
     id: 'idli-dal',
-    name: 'Idli with ghee and mild dal to dip',
+    name: 'Idli with mild dal',
     slots: ['breakfast'],
     tags: ['iron', 'protein', 'fat'],
     why: 'Fermented batter is easy on his gut, and the dal on the side keeps it an iron meal.',
     prepMinutes: 20,
     needsVitaminC: true,
-    notes: 'Tear into pieces. Skip the chutney.',
+    notes: 'Tear into pieces, ghee on top. Skip the chutney.',
     ingredients: [
       { item: 'idli batter', category: 'grainsAndLentils' },
       { item: 'toor dal', category: 'grainsAndLentils' },
@@ -133,7 +133,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'plain-dosa',
-    name: 'Plain dosa with ghee',
+    name: 'Plain dosa',
     slots: ['breakfast'],
     tags: ['iron', 'protein', 'fat'],
     why: 'Rice-and-urad batter — the urad dal is the iron, the ghee is the point at this age.',
@@ -147,7 +147,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'uttapam',
-    name: 'Soft uttapam with grated carrot',
+    name: 'Carrot uttapam',
     slots: ['breakfast'],
     tags: ['iron', 'protein', 'fat'],
     why: 'Same batter as dosa, thicker and softer, with vegetables cooked into the surface.',
@@ -180,7 +180,7 @@ export const FOODS: Food[] = [
   // ------------------------------------------------------------------- snacks
   {
     id: 'paneer-orange',
-    name: 'Raw paneer cubes with orange segments',
+    name: 'Raw paneer + orange',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['protein', 'calcium', 'fat', 'vitaminC'],
     why: "The orange is doing double duty here — vitamin C sitting right next to the day's iron.",
@@ -193,7 +193,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'banana-raisins',
-    name: 'Banana with soaked, chopped raisins',
+    name: 'Banana + soaked raisins',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['iron', 'fat'],
     why: 'Raisins are a quiet iron source, and soaking makes them soft enough to be safe.',
@@ -208,7 +208,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'banana-raisins-orange',
-    name: 'Banana with soaked raisins and orange segments',
+    name: 'Banana, raisins + orange',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['iron', 'fat', 'vitaminC'],
     why: 'Raisin iron with the orange sitting right next to it — day 2 has no other vitamin C in it.',
@@ -223,7 +223,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'papaya-chikoo',
-    name: 'Papaya or chikoo, cubed',
+    name: 'Papaya or chikoo',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['vitaminC'],
     why: 'Papaya is high in vitamin C, which is the half of the iron equation that gets forgotten.',
@@ -236,7 +236,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'yogurt-banana',
-    name: 'Yogurt with mashed banana',
+    name: 'Yogurt + banana',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['calcium', 'protein', 'choline'],
     why: 'Full-fat yogurt brings calcium, protein and choline in one bowl with no cooking.',
@@ -249,7 +249,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'yogurt-fruit',
-    name: 'Yogurt with mashed mango or berries',
+    name: 'Yogurt + mango or berries',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['calcium', 'protein', 'choline', 'vitaminC'],
     why: 'Vitamin C from the fruit, calcium and choline from the yogurt, thirty seconds of work.',
@@ -263,7 +263,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'avocado-toast',
-    name: 'Mashed avocado on toast strips',
+    name: 'Avocado on toast strips',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['fat', 'choline', 'omega3'],
     why: 'Energy-dense fat is what toddlers actually grow on — this is the least fussy way to serve it.',
@@ -276,7 +276,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'avocado-toast-orange',
-    name: 'Mashed avocado on toast strips with orange',
+    name: 'Avocado toast + orange',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['fat', 'choline', 'omega3', 'vitaminC'],
     why: "Energy-dense fat, plus the orange that day 5's sattu halwa and dal dalia need to land.",
@@ -290,7 +290,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'paneer-berries',
-    name: 'Raw paneer with strawberries or orange',
+    name: 'Raw paneer + strawberries',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['protein', 'calcium', 'fat', 'vitaminC'],
     why: 'Berries next to paneer put vitamin C in reach of the iron-heavy lunch that follows.',
@@ -304,7 +304,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'paneer-cucumber',
-    name: 'Raw paneer with soft cucumber sticks',
+    name: 'Raw paneer + cucumber',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['protein', 'calcium', 'fat'],
     why: 'Cool and soft with no cooking — the snack for an afternoon after a heavy lunch.',
@@ -317,7 +317,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'fruit-bowl',
-    name: 'Fruit bowl — banana, papaya, berries',
+    name: 'Banana, papaya + berries',
     slots: ['morningSnack', 'afternoonSnack'],
     tags: ['vitaminC'],
     why: 'Three textures and a real hit of vitamin C ahead of the iron later in the day.',
@@ -345,12 +345,12 @@ export const FOODS: Food[] = [
   },
   {
     id: 'sweet-potato-fingers',
-    name: 'Steamed sweet potato fingers with ghee',
+    name: 'Sweet potato fingers',
     slots: ['afternoonSnack', 'morningSnack'],
     tags: ['fat', 'vitaminC'],
     why: 'Sweet potato has real vitamin C, and the ghee turns it into an energy-dense snack.',
     prepMinutes: 15,
-    notes: 'Steam until you can squash a piece between two fingers.',
+    notes: 'Steam until you can squash a piece between two fingers, then toss in ghee.',
     ingredients: [
       { item: 'sweet potato', category: 'produce' },
       { item: 'ghee', category: 'pantry', staple: true },
@@ -358,7 +358,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'chana-sattu-halwa',
-    name: 'Chana sattu halwa, date-sweetened',
+    name: 'Chana sattu halwa',
     slots: ['afternoonSnack', 'morningSnack'],
     tags: ['iron', 'protein', 'zinc', 'fat', 'choline'],
     why: 'The best single item on the plan — roasted chana flour plus dates stacks iron on iron, with no refined sugar.',
@@ -374,7 +374,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'dhokla',
-    name: 'Soft dhokla pieces',
+    name: 'Soft dhokla',
     slots: ['afternoonSnack', 'morningSnack'],
     tags: ['iron', 'protein'],
     why: 'Fermented besan — iron and protein, and soft enough to gum with no molars.',
@@ -391,12 +391,12 @@ export const FOODS: Food[] = [
   // -------------------------------------------------------------------- mains
   {
     id: 'moong-khichdi',
-    name: 'Khichdi with moong dal, carrot and beans',
+    name: 'Moong dal khichdi',
     slots: ['lunch', 'dinner'],
     tags: ['iron', 'protein', 'fat', 'vitaminC'],
     why: 'The workhorse: dal iron, absorbed because of the lemon, carried on ghee.',
     prepMinutes: 25,
-    notes: 'Lemon in at the end. Soft-steamed broccoli folded in adds choline.',
+    notes: 'Carrot and beans cooked soft, lemon in at the end. Broccoli folded in adds choline.',
     ingredients: [
       { item: 'moong dal', category: 'grainsAndLentils' },
       { item: 'rice', category: 'grainsAndLentils' },
@@ -408,12 +408,12 @@ export const FOODS: Food[] = [
   },
   {
     id: 'curd-rice',
-    name: 'Curd rice with grated carrot and jeera tempering',
+    name: 'Curd rice',
     slots: ['lunch', 'dinner'],
     tags: ['calcium', 'protein', 'choline'],
     why: 'Gentle on his stomach, and the curd is quietly a choline source.',
     prepMinutes: 15,
-    notes: 'Room temperature, not fridge-cold.',
+    notes: 'Room temperature, not fridge-cold. Grated carrot in, jeera tempering on top.',
     ingredients: [
       { item: 'rice', category: 'grainsAndLentils' },
       { item: 'yogurt (curd)', category: 'dairy' },
@@ -424,13 +424,13 @@ export const FOODS: Food[] = [
   },
   {
     id: 'rajma-rice',
-    name: 'Mashed rajma with rice and chopped tomato',
+    name: 'Rajma + rice',
     slots: ['lunch'],
     tags: ['iron', 'protein', 'choline', 'vitaminC'],
     why: 'Rajma is an iron and choline anchor, and the tomato puts the vitamin C in the same bowl.',
     prepMinutes: 30,
     weeklyIronAnchor: true,
-    notes: 'Mash well — whole beans are a choking risk. No chili.',
+    notes: 'Mash well — whole beans are a choking risk. Chopped tomato on top, no chili.',
     ingredients: [
       { item: 'rajma (kidney beans)', category: 'grainsAndLentils' },
       { item: 'rice', category: 'grainsAndLentils' },
@@ -441,7 +441,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'kala-chana-rice',
-    name: 'Mashed kala chana with rice and ghee',
+    name: 'Kala chana + rice',
     slots: ['lunch'],
     tags: ['iron', 'protein', 'zinc', 'choline'],
     why: 'Black chana stacks iron, zinc and choline — one of the strongest meals of the week.',
@@ -457,7 +457,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'lobia-rice',
-    name: 'Mashed lobia with rice',
+    name: 'Lobia + rice',
     slots: ['lunch'],
     tags: ['iron', 'protein', 'choline', 'zinc'],
     why: 'Black-eyed peas cook faster than rajma and carry the same iron and choline.',
@@ -474,7 +474,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'paneer-bhurji-paratha',
-    name: 'Paneer bhurji with soft paratha',
+    name: 'Paneer bhurji + paratha',
     slots: ['lunch', 'dinner'],
     tags: ['protein', 'calcium', 'fat', 'vitaminC'],
     why: 'Easy protein and fat — swap tofu in once a week and it gains iron and choline too.',
@@ -490,7 +490,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'tofu-bhurji-paratha',
-    name: 'Tofu bhurji with soft paratha',
+    name: 'Tofu bhurji + paratha',
     slots: ['lunch', 'dinner'],
     tags: ['iron', 'choline', 'calcium', 'protein', 'vitaminC'],
     why: 'Tofu carries choline, iron and calcium at once — the one swap that closes three gaps.',
@@ -506,7 +506,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'veg-pulao-yogurt',
-    name: 'Soft vegetable pulao with yogurt',
+    name: 'Vegetable pulao + yogurt',
     slots: ['lunch', 'dinner'],
     tags: ['calcium', 'fat', 'choline'],
     why: 'Mild and soft, and steamed cauliflower stirred through turns it into a choline meal.',
@@ -522,7 +522,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'palak-paneer-rice',
-    name: 'Mild palak paneer with rice',
+    name: 'Palak paneer + rice',
     slots: ['lunch', 'dinner'],
     tags: ['iron', 'calcium', 'protein', 'fat'],
     why: 'Spinach iron plus paneer fat — a squeeze of lemon at the end is what makes the iron usable.',
@@ -539,12 +539,12 @@ export const FOODS: Food[] = [
   },
   {
     id: 'sweet-potato-paneer-pancakes',
-    name: 'Sweet potato and paneer pancakes with soft vegetables',
+    name: 'Sweet potato + paneer pancakes',
     slots: ['dinner', 'breakfast'],
     tags: ['protein', 'calcium', 'fat', 'vitaminC'],
     why: 'Energy-dense and hand-held, and the sweet potato brings vitamin C to the day.',
     prepMinutes: 25,
-    notes: 'Small enough to hold in one fist.',
+    notes: 'Soft-cooked vegetables alongside. Small enough to hold in one fist.',
     ingredients: [
       { item: 'sweet potato', category: 'produce' },
       { item: 'paneer', category: 'dairy' },
@@ -555,7 +555,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'dal-roti',
-    name: 'Dal with roti torn small, mashed with ghee',
+    name: 'Dal + roti',
     slots: ['dinner', 'lunch'],
     tags: ['iron', 'protein', 'fat'],
     why: 'The everyday iron meal — dal most days is what keeps his stores where they should be.',
@@ -571,13 +571,13 @@ export const FOODS: Food[] = [
   },
   {
     id: 'moong-veg-soup',
-    name: 'Vegetable and moong dal soup with soft rice',
+    name: 'Moong dal + vegetable soup',
     slots: ['dinner', 'lunch'],
     tags: ['iron', 'protein', 'choline'],
     why: 'Light but still an iron meal, and cauliflower stirred in makes it a choline one too.',
     prepMinutes: 25,
     needsVitaminC: true,
-    notes: 'Add soft-steamed broccoli or cauliflower florets.',
+    notes: 'Serve over soft rice or dalia. Broccoli or cauliflower florets add choline.',
     ingredients: [
       { item: 'moong dal', category: 'grainsAndLentils' },
       { item: 'rice', category: 'grainsAndLentils' },
@@ -605,13 +605,13 @@ export const FOODS: Food[] = [
   },
   {
     id: 'dal-dalia',
-    name: 'Dal dalia (broken wheat khichdi)',
+    name: 'Dal dalia',
     slots: ['dinner', 'lunch'],
     tags: ['iron', 'protein', 'zinc', 'fat'],
     why: 'Broken wheat adds zinc to the dal iron — good fuel through a growth spurt.',
     prepMinutes: 30,
     needsVitaminC: true,
-    notes: 'Cook until it falls apart.',
+    notes: 'Broken wheat khichdi. Cook until it falls apart.',
     ingredients: [
       { item: 'dalia (broken wheat)', category: 'grainsAndLentils' },
       { item: 'moong dal', category: 'grainsAndLentils' },
@@ -621,14 +621,14 @@ export const FOODS: Food[] = [
   },
   {
     id: 'stuffed-paratha-curd',
-    name: 'Stuffed paratha (methi / palak / paneer) with curd',
+    name: 'Stuffed paratha + curd',
     slots: ['dinner', 'lunch', 'breakfast'],
     tags: ['iron', 'calcium', 'fat', 'protein'],
     why: 'Greens folded into the dough is the easiest way to get palak into him without a fight.',
     prepMinutes: 30,
     needsVitaminC: true,
     weeklyIronAnchor: true,
-    notes: 'Chop the greens fine, tear into pieces, no chili.',
+    notes: 'Methi, palak or paneer stuffing. Chop the greens fine, tear into pieces, no chili.',
     ingredients: [
       { item: 'atta (whole wheat flour)', category: 'grainsAndLentils' },
       { item: 'spinach (palak)', category: 'produce' },
@@ -640,7 +640,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'khichdi-yogurt',
-    name: 'Khichdi with yogurt — light reset',
+    name: 'Khichdi + yogurt',
     slots: ['dinner', 'lunch'],
     tags: ['iron', 'calcium', 'protein', 'fat'],
     why: 'The reset meal at the end of a heavy week, and it still carries dal iron.',
@@ -656,7 +656,7 @@ export const FOODS: Food[] = [
   },
   {
     id: 'tofu-khichdi',
-    name: 'Khichdi with soft tofu cubes',
+    name: 'Tofu khichdi',
     slots: ['dinner', 'lunch'],
     tags: ['iron', 'choline', 'calcium', 'protein'],
     why: 'Tofu cubed into khichdi is the painless way to work soy in once a week.',

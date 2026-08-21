@@ -98,6 +98,15 @@ describe('food library integrity', () => {
     ]);
   });
 
+  it('keeps names short enough to read at a glance without truncating', () => {
+    // The card shows the dish; prep detail lives in `notes` and the components
+    // live in `ingredients`. Long names truncate in the Week overview and push
+    // the Today cards to three lines each.
+    for (const food of FOODS) {
+      expect(food.name.length, `${food.id}: "${food.name}"`).toBeLessThanOrEqual(32);
+    }
+  });
+
   it('keeps prep times plausible for a weekday morning', () => {
     for (const food of FOODS) {
       expect(food.prepMinutes, food.id).toBeLessThanOrEqual(45);

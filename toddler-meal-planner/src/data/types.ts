@@ -30,6 +30,15 @@ export const SLOT_LABELS: Record<Slot, string> = {
   dinner: 'Dinner',
 };
 
+/** Compact labels for the Week overview, where the full ones do not fit. */
+export const SLOT_SHORT_LABELS: Record<Slot, string> = {
+  breakfast: 'Breakfast',
+  morningSnack: 'Snack AM',
+  lunch: 'Lunch',
+  afternoonSnack: 'Snack PM',
+  dinner: 'Dinner',
+};
+
 /**
  * Nutrition tags. These are the levers the meal plan actually cares about for
  * a vegetarian 13-month-old. Deliberately no calories and no macros: the plan

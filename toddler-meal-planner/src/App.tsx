@@ -1,32 +1,43 @@
-import { SLOTS, SLOT_LABELS } from './data/types';
-import { formatLong, todayISO } from './lib/date';
-import { resolveDay } from './lib/rotation';
+import { useEffect } from 'react';
+import { TabBar } from './components/TabBar';
+import { GroceriesScreen } from './screens/GroceriesScreen';
+import { TodayScreen } from './screens/TodayScreen';
+import { TrackersScreen } from './screens/TrackersScreen';
+import { WeekScreen } from './screens/WeekScreen';
+import { todayISO, type ISODate } from './lib/date';
+import { useRoute, type Tab } from './lib/router';
+import { pruneHistory } from './lib/storage';
 
-/**
- * PLACEHOLDER — step 2 replaces this with the real Today screen.
- *
- * It exists so `npm run dev` and `npm run build` work, and so the data layer
- * can be eyeballed in a browser as well as in the test output.
- */
 export function App() {
-  const date = todayISO();
-  const day = resolveDay(date);
+  const [route, navigate] = useRoute();
+
+  // Trim the rolling 30-day window once per launch.
+  useEffect(() => {
+    pruneHistory(todayISO());
+  }, []);
+
+  const goToTab = (tab: Tab): void => {
+    navigate(tab === 'today' ? { tab: 'today', date: todayISO() } : { tab });
+  };
+
+  const openDay = (date: ISODate): void => {
+    navigate({ tab: 'today', date });
+  };
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', padding: '1.5rem', lineHeight: 1.5 }}>
-      <p>{formatLong(date)}</p>
-      <p>
-        Day {day.dayNumber} of {day.cycleLength} — {day.label}
-      </p>
-      <ul>
-        {SLOTS.map((slot) => (
-          <li key={slot}>
-            <strong>{SLOT_LABELS[slot]}:</strong> {day.meals[slot].name} (
-            {day.meals[slot].prepMinutes} min)
-            {day.meals[slot].needsVitaminC ? ' — pair with lemon / orange' : ''}
-          </li>
-        ))}
-      </ul>
-    </main>
+    <div className="min-h-dvh bg-paper pb-20">
+      {route.tab === 'today' && (
+        <TodayScreen
+          key={route.date}
+          date={route.date}
+          onGoToToday={() => navigate({ tab: 'today', date: todayISO() })}
+        />
+      )}
+      {route.tab === 'week' && <WeekScreen onOpenDay={openDay} />}
+      {route.tab === 'trackers' && <TrackersScreen />}
+      {route.tab === 'groceries' && <GroceriesScreen />}
+
+      <TabBar active={route.tab} onSelect={goToTab} />
+    </div>
   );
 }
