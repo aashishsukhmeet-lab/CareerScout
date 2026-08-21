@@ -46,13 +46,21 @@ tell you if you have missed something.
 `maxAgeMonths`. Nothing filters on them yet; when he passes 18 months, the
 filter is a few lines in `eligibleFoods` and the data is already shaped for it.
 
-### The one tagging rule
+### Two tagging rules
 
-`needsVitaminC: true` exactly when a food carries the `iron` tag and has no
-vitamin C of its own. That is what drives the "pair with lemon / orange"
-badge — which is why rajma (chopped tomato) and khichdi (squeeze of lemon)
-do not show it, and ragi porridge and sattu halwa do. `foods.test.ts`
-enforces this, so the badge can be trusted.
+**`needsVitaminC: true`** exactly when a food carries the `iron` tag and has
+no vitamin C of its own. That drives the "pair with lemon / orange" badge —
+which is why rajma (chopped tomato) and khichdi (squeeze of lemon) do not
+show it, and ragi porridge and sattu halwa do.
+
+**`weeklyIronAnchor: true`** only on the meals the plan's Weekly Iron Anchors
+section names by hand: chana, rajma, ragi, palak, sattu halwa, raisins. This
+is narrower than the `iron` tag, which the everyday dal carries too. Milk
+warnings key off the anchor, not the tag — with dal in most meals, the wider
+test fires on three pours a day and stops being read. As scoped, it lands at
+most once a day.
+
+`foods.test.ts` enforces both, so the badges can be trusted.
 
 ## Commands
 
@@ -66,5 +74,5 @@ npm run build      # static output in dist/
 
 ## Status
 
-Data layer complete and tested (82 tests). Screens, trackers, groceries and
+Data layer complete and tested (88 tests). Screens, trackers, groceries and
 PWA config still to come — see the build order in the project brief.

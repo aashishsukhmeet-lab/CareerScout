@@ -71,6 +71,33 @@ describe('food library integrity', () => {
     }
   });
 
+  it('only marks weekly iron anchors on foods that actually carry iron', () => {
+    for (const food of FOODS) {
+      if (food.weeklyIronAnchor) {
+        expect(food.tags, `${food.id} is an anchor with no iron tag`).toContain('iron');
+      }
+    }
+  });
+
+  it('marks exactly the anchors the plan names by hand', () => {
+    // "Weekly Iron Anchors" in toddler-7-day-meal-plan.md: sattu halwa, ragi,
+    // rajma, kala chana, palak, raisins. Everyday dal is deliberately not one
+    // — that distinction is what keeps milk warnings meaningful.
+    const anchors = FOODS.filter((f) => f.weeklyIronAnchor).map((f) => f.id).sort();
+    expect(anchors).toEqual([
+      'banana-raisins',
+      'banana-raisins-orange',
+      'chana-sattu-halwa',
+      'kala-chana-rice',
+      'lobia-rice',
+      'palak-paneer-rice',
+      'ragi-khichdi',
+      'ragi-porridge',
+      'rajma-rice',
+      'stuffed-paratha-curd',
+    ]);
+  });
+
   it('keeps prep times plausible for a weekday morning', () => {
     for (const food of FOODS) {
       expect(food.prepMinutes, food.id).toBeLessThanOrEqual(45);

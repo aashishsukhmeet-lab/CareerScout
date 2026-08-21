@@ -28,7 +28,7 @@ export const CYCLE: DayPlan[] = [
     label: 'Ragi and dal — heavy iron day',
     meals: {
       breakfast: 'ragi-porridge',
-      morningSnack: 'banana-raisins',
+      morningSnack: 'banana-raisins-orange',
       lunch: 'curd-rice',
       afternoonSnack: 'besan-chilla-strips',
       dinner: 'dal-roti',
@@ -61,7 +61,7 @@ export const CYCLE: DayPlan[] = [
     label: 'Sattu halwa — best iron of the week',
     meals: {
       breakfast: 'idli-dal',
-      morningSnack: 'avocado-toast',
+      morningSnack: 'avocado-toast-orange',
       lunch: 'veg-pulao-yogurt',
       afternoonSnack: 'chana-sattu-halwa',
       dinner: 'dal-dalia',

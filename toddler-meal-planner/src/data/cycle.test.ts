@@ -74,7 +74,7 @@ describe('the cycle matches toddler-7-day-meal-plan.md', () => {
     expect(dayHas(6, 'stuffed-paratha-curd')).toBe(true);
     expect(dayHas(7, 'palak-paneer-rice')).toBe(true);
     // "Raisins — Day 2"
-    expect(dayHas(2, 'banana-raisins')).toBe(true);
+    expect(dayHas(2, 'banana-raisins-orange')).toBe(true);
   });
 
   it('gives every day at least one iron anchor', () => {
@@ -95,16 +95,25 @@ describe('the cycle matches toddler-7-day-meal-plan.md', () => {
     }
   });
 
-  it('records the days that carry no vitamin C at all and lean on the badge', () => {
-    // Two of the heaviest iron days have no vitamin C food scheduled anywhere
-    // in them, as the plan is written: day 2 (ragi + raisins + dal) and day 5
-    // (sattu halwa + dal dalia). The pairing badge is doing all the work on
-    // those days. Pinned so it stays a deliberate decision, not a surprise —
-    // add an orange to either snack and this list shrinks.
+  it('schedules a real vitamin C source on every day, not just the badge', () => {
+    // Days 2 and 5 originally had none — the heaviest iron days of the week
+    // with nothing to absorb it. Both now carry an orange at morning snack.
     const daysWithoutVitaminC = CYCLE.filter(
       (day) => !SLOTS.some((slot) => getFood(day.meals[slot]).tags.includes('vitaminC')),
     ).map((day) => day.id);
-    expect(daysWithoutVitaminC).toEqual(['day-2', 'day-5']);
+    expect(daysWithoutVitaminC).toEqual([]);
+  });
+
+  it('puts the vitamin C in the same day as the iron it is meant to absorb', () => {
+    for (const day of CYCLE) {
+      const foods = SLOTS.map((slot) => getFood(day.meals[slot]));
+      const ironSlots = foods.filter((f) => f.tags.includes('iron'));
+      if (ironSlots.length === 0) continue;
+      expect(
+        foods.some((f) => f.tags.includes('vitaminC')),
+        `${day.id} has iron but no vitamin C`,
+      ).toBe(true);
+    }
   });
 
   it('does not repeat a food twice in one day', () => {

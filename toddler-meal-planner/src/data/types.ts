@@ -101,6 +101,16 @@ export interface Food {
   /** Ingredients for the grocery list. */
   ingredients: Ingredient[];
   /**
+   * Marks the meals the plan's "Weekly Iron Anchors" section names as the
+   * heavy lifters: chana, rajma, ragi, palak, sattu halwa, raisins. Distinct
+   * from the `iron` tag, which the everyday dal also carries.
+   *
+   * Milk-timing warnings key off this rather than the tag. Dal is in most
+   * meals, so warning on every one of them would put three warnings a day on
+   * the screen and train you to ignore all of them.
+   */
+  weeklyIronAnchor?: boolean;
+  /**
    * Age gating, for when the plan evolves past 18 months and 2 years.
    * Unset means "fine from 12 months". Nothing filters on this yet; the field
    * exists so adding the filter later is a data change, not a schema change.

@@ -45,6 +45,7 @@ export const FOODS: Food[] = [
     why: 'Ragi is the most calcium-dense grain on the plan, and the jaggery stacks iron on top.',
     prepMinutes: 12,
     needsVitaminC: true,
+    weeklyIronAnchor: true,
     notes: 'Cook it smooth — lumps put toddlers off it for weeks.',
     ingredients: [
       { item: 'ragi flour', category: 'grainsAndLentils' },
@@ -198,10 +199,26 @@ export const FOODS: Food[] = [
     why: 'Raisins are a quiet iron source, and soaking makes them soft enough to be safe.',
     prepMinutes: 5,
     needsVitaminC: true,
+    weeklyIronAnchor: true,
     notes: 'Soak and chop — never whole. Choking risk.',
     ingredients: [
       { item: 'banana', category: 'produce' },
       { item: 'raisins', category: 'pantry' },
+    ],
+  },
+  {
+    id: 'banana-raisins-orange',
+    name: 'Banana with soaked raisins and orange segments',
+    slots: ['morningSnack', 'afternoonSnack'],
+    tags: ['iron', 'fat', 'vitaminC'],
+    why: 'Raisin iron with the orange sitting right next to it — day 2 has no other vitamin C in it.',
+    prepMinutes: 6,
+    weeklyIronAnchor: true,
+    notes: 'Soak and chop the raisins — never whole. Membrane off the orange.',
+    ingredients: [
+      { item: 'banana', category: 'produce' },
+      { item: 'raisins', category: 'pantry' },
+      { item: 'orange', category: 'produce' },
     ],
   },
   {
@@ -255,6 +272,20 @@ export const FOODS: Food[] = [
     ingredients: [
       { item: 'avocado', category: 'produce' },
       { item: 'bread', category: 'grainsAndLentils' },
+    ],
+  },
+  {
+    id: 'avocado-toast-orange',
+    name: 'Mashed avocado on toast strips with orange',
+    slots: ['morningSnack', 'afternoonSnack'],
+    tags: ['fat', 'choline', 'omega3', 'vitaminC'],
+    why: "Energy-dense fat, plus the orange that day 5's sattu halwa and dal dalia need to land.",
+    prepMinutes: 6,
+    notes: 'Toast lightly, strips he can grip, membrane off the orange.',
+    ingredients: [
+      { item: 'avocado', category: 'produce' },
+      { item: 'bread', category: 'grainsAndLentils' },
+      { item: 'orange', category: 'produce' },
     ],
   },
   {
@@ -333,6 +364,7 @@ export const FOODS: Food[] = [
     why: 'The best single item on the plan — roasted chana flour plus dates stacks iron on iron, with no refined sugar.',
     prepMinutes: 15,
     needsVitaminC: true,
+    weeklyIronAnchor: true,
     notes: 'Serve an orange alongside, or lemon in his water.',
     ingredients: [
       { item: 'sattu (roasted chana flour)', category: 'grainsAndLentils' },
@@ -397,6 +429,7 @@ export const FOODS: Food[] = [
     tags: ['iron', 'protein', 'choline', 'vitaminC'],
     why: 'Rajma is an iron and choline anchor, and the tomato puts the vitamin C in the same bowl.',
     prepMinutes: 30,
+    weeklyIronAnchor: true,
     notes: 'Mash well — whole beans are a choking risk. No chili.',
     ingredients: [
       { item: 'rajma (kidney beans)', category: 'grainsAndLentils' },
@@ -414,6 +447,7 @@ export const FOODS: Food[] = [
     why: 'Black chana stacks iron, zinc and choline — one of the strongest meals of the week.',
     prepMinutes: 35,
     needsVitaminC: true,
+    weeklyIronAnchor: true,
     notes: 'Soak overnight, pressure-cook soft, mash well.',
     ingredients: [
       { item: 'kala chana (black chickpeas)', category: 'grainsAndLentils' },
@@ -429,6 +463,7 @@ export const FOODS: Food[] = [
     why: 'Black-eyed peas cook faster than rajma and carry the same iron and choline.',
     prepMinutes: 25,
     needsVitaminC: true,
+    weeklyIronAnchor: true,
     notes: 'Soak first to cut the cooking time. Mash well.',
     ingredients: [
       { item: 'lobia (black-eyed peas)', category: 'grainsAndLentils' },
@@ -493,6 +528,7 @@ export const FOODS: Food[] = [
     why: 'Spinach iron plus paneer fat — a squeeze of lemon at the end is what makes the iron usable.',
     prepMinutes: 25,
     needsVitaminC: true,
+    weeklyIronAnchor: true,
     notes: 'No chili at all. Blend it smooth.',
     ingredients: [
       { item: 'spinach (palak)', category: 'produce' },
@@ -558,6 +594,7 @@ export const FOODS: Food[] = [
     why: 'Millet iron and ragi calcium inside the one dish he already eats without argument.',
     prepMinutes: 25,
     needsVitaminC: true,
+    weeklyIronAnchor: true,
     notes: 'Cook it softer than you think it needs.',
     ingredients: [
       { item: 'ragi (or millet)', category: 'grainsAndLentils' },
@@ -590,6 +627,7 @@ export const FOODS: Food[] = [
     why: 'Greens folded into the dough is the easiest way to get palak into him without a fight.',
     prepMinutes: 30,
     needsVitaminC: true,
+    weeklyIronAnchor: true,
     notes: 'Chop the greens fine, tear into pieces, no chili.',
     ingredients: [
       { item: 'atta (whole wheat flour)', category: 'grainsAndLentils' },

@@ -18,6 +18,22 @@ export function isIronAnchor(food: Food): boolean {
 }
 
 /**
+ * The heavy lifters the plan names by hand: chana, rajma, ragi, palak, sattu
+ * halwa, raisins. Everyday dal carries iron too, but is not one of these.
+ *
+ * The distinction exists because dal is in most meals. Keying milk warnings
+ * off the iron tag would put a warning on nearly every pour, which is the
+ * fastest way to teach someone to ignore all of them.
+ */
+export function isWeeklyIronAnchor(food: Food): boolean {
+  return food.weeklyIronAnchor === true;
+}
+
+export function weeklyIronAnchorSlots(day: ResolvedDay): Slot[] {
+  return SLOTS.filter((slot) => isWeeklyIronAnchor(day.meals[slot]));
+}
+
+/**
  * Every day in the rotation ships with at least one iron anchor. This check
  * earns its keep after swaps: trade the rajma out for curd rice and the Week
  * view should say so.
@@ -91,11 +107,16 @@ export const MILK_SLOT_MEAL: Record<MilkSlot, Slot> = {
 
 /**
  * Calcium blocks iron absorption, so milk landing on an iron meal wastes the
- * iron. Water with those meals instead — that is the warning this drives.
+ * iron. Water with that meal instead — that is the warning this drives.
+ *
+ * Scoped to the plan's named weekly anchors, not every iron-tagged food. With
+ * dal in most meals, the broader test fires on three pours a day and stops
+ * being read; this way it lands roughly once a day, on the meal where losing
+ * the iron actually costs something.
  */
 export function milkConflictsWith(day: ResolvedDay, milkSlot: MilkSlot): Food | null {
   const food = day.meals[MILK_SLOT_MEAL[milkSlot]];
-  return isIronAnchor(food) ? food : null;
+  return isWeeklyIronAnchor(food) ? food : null;
 }
 
 export function conflictingMilkSlots(day: ResolvedDay): MilkSlot[] {

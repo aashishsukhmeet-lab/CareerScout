@@ -14,6 +14,7 @@ import {
   hasIronAnchor,
   ironAnchorSlots,
   isIronAnchor,
+  isWeeklyIronAnchor,
   milkConflictsWith,
   milkTotalStatus,
   needsVitaminCPairing,
@@ -84,21 +85,45 @@ describe('vitamin C pairing', () => {
     expect(unpairedIronSlots(planDay(3))).toEqual([]);
   });
 
-  it('speaks up on the two days that schedule no vitamin C at all', () => {
-    expect(unpairedIronSlots(planDay(2)).length).toBeGreaterThan(0);
-    expect(unpairedIronSlots(planDay(5)).length).toBeGreaterThan(0);
+  it('stays quiet on every scheduled day, now that all seven carry vitamin C', () => {
+    for (let n = 1; n <= 7; n += 1) {
+      expect(unpairedIronSlots(planDay(n)), `day ${n}`).toEqual([]);
+    }
+  });
+
+  it('speaks up when a swap takes the only vitamin C away', () => {
+    // Day 2 leans entirely on the orange at morning snack.
+    const stripped = resolveDay(addDays(ANCHOR, 1), { morningSnack: 'banana-raisins' });
+    expect(unpairedIronSlots(stripped).length).toBeGreaterThan(0);
   });
 });
 
 describe('milk timing', () => {
-  it('warns when milk lands on an iron meal, because calcium blocks iron', () => {
-    // Day 2 breakfast is ragi porridge — an iron anchor.
+  it('warns when milk lands on one of the named iron anchors', () => {
+    // Day 2 breakfast is ragi porridge — an anchor the plan names by hand.
     const day2 = planDay(2);
     expect(milkConflictsWith(day2, 'morning')?.id).toBe('ragi-porridge');
     expect(conflictingMilkSlots(day2)).toContain('morning');
 
-    // Day 2 dinner is dal + roti, so bedtime milk collides too.
-    expect(milkConflictsWith(day2, 'bedtime')?.id).toBe('dal-roti');
+    // Day 4 dinner is ragi khichdi, day 6 dinner is the palak paratha.
+    expect(milkConflictsWith(planDay(4), 'bedtime')?.id).toBe('ragi-khichdi');
+    expect(milkConflictsWith(planDay(6), 'bedtime')?.id).toBe('stuffed-paratha-curd');
+    expect(milkConflictsWith(planDay(7), 'afternoon')?.id).toBe('chana-sattu-halwa');
+  });
+
+  it('lets the everyday dal pass quietly, so the warning stays worth reading', () => {
+    // Dal + roti and dal dalia carry iron, but the plan does not name them as
+    // weekly anchors. Warning on them too would mean three warnings a day.
+    expect(isIronAnchor(getFood('dal-roti'))).toBe(true);
+    expect(isWeeklyIronAnchor(getFood('dal-roti'))).toBe(false);
+    expect(milkConflictsWith(planDay(2), 'bedtime')).toBeNull();
+    expect(milkConflictsWith(planDay(5), 'bedtime')).toBeNull();
+  });
+
+  it('never puts more than one warning on a day, across the whole cycle', () => {
+    for (let n = 1; n <= 7; n += 1) {
+      expect(conflictingMilkSlots(planDay(n)).length, `day ${n}`).toBeLessThanOrEqual(1);
+    }
   });
 
   it('stays quiet when the paired meal carries no iron', () => {
