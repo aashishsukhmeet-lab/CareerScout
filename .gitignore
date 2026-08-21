@@ -46,3 +46,7 @@ coverage/
 
 # Configuration files with API keys
 js/config.js
+
+# Vite/vitest build cache
+**/.vite/
+**/node_modules/.tmp/
