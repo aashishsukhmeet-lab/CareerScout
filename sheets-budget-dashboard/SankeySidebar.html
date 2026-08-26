@@ -1,0 +1,212 @@
+<!-- SankeySidebar.html — the Money Flow diagram (desktop only). -->
+<style>
+  :root {
+    --ink: #1F2A33; --body: #2F3B44; --muted: #6E7B85;
+    --hairline: #D6DCE1; --panel: #F7F9FA;
+    --income: #009E73; --fixed: #0072B2; --variable: #E69F00;
+    --debt: #D55E00; --savings: #56B4E9; --leftover: #CC79A7;
+    --warnbg: #FDF2DA; --warntext: #8A6100;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 12px;
+    font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--body); background: #fff; font-size: 13px;
+  }
+  h1 { font-size: 15px; margin: 0 0 2px; color: var(--ink); font-weight: 700; }
+  .sub { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+
+  .controls { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+  select, button {
+    font: inherit; font-size: 12px; padding: 5px 8px;
+    border: 1px solid var(--hairline); border-radius: 4px;
+    background: #fff; color: var(--body); cursor: pointer;
+  }
+  select { flex: 1 1 auto; min-width: 0; }
+  button:hover { background: var(--panel); }
+
+  #chart { width: 100%; min-height: 260px; }
+
+  .note {
+    font-size: 11px; padding: 8px 10px; border-radius: 4px;
+    background: var(--warnbg); color: var(--warntext); margin-bottom: 10px;
+    line-height: 1.45;
+  }
+  .msg { font-size: 12px; color: var(--muted); padding: 24px 4px; line-height: 1.5; }
+
+  table.totals { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  table.totals td { padding: 5px 0; border-bottom: 1px solid var(--hairline); }
+  table.totals td.k { color: var(--body); }
+  table.totals td.v { text-align: right; font-variant-numeric: tabular-nums;
+                      font-weight: 600; color: var(--ink); white-space: nowrap; }
+  table.totals tr.head td { font-size: 10px; letter-spacing: .06em;
+                            text-transform: uppercase; color: var(--muted);
+                            border-bottom: 1px solid var(--hairline); }
+  .swatch { display: inline-block; width: 9px; height: 9px; border-radius: 2px;
+            margin-right: 7px; vertical-align: baseline; }
+  .foot { font-size: 10px; color: var(--muted); margin-top: 12px; line-height: 1.5; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 6px;
+           border-radius: 3px; background: var(--panel); color: var(--muted); }
+</style>
+
+<h1>Money Flow</h1>
+<div class="sub" id="subtitle">Loading…</div>
+
+<div class="controls">
+  <select id="month" aria-label="Month"></select>
+  <button id="reload" title="Re-read the sheet">Refresh</button>
+</div>
+
+<div id="warn" class="note" style="display:none"></div>
+<div id="chart"></div>
+<div id="msg" class="msg" style="display:none"></div>
+<div id="totals"></div>
+<div class="foot" id="foot"></div>
+
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
+  var MODE  = '<?= mode ?>';
+  var WIDE  = MODE === 'dialog';
+  var ready = false;
+  var pending = null;
+  var current = null;
+
+  google.charts.load('current', { packages: ['sankey'] });
+  google.charts.setOnLoadCallback(function () {
+    ready = true;
+    if (pending) { draw(pending); pending = null; }
+  });
+
+  function money(n) {
+    var v = Math.round(Number(n) || 0);
+    return (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString('en-US');
+  }
+
+  function load(month) {
+    document.getElementById('subtitle').textContent = 'Reading the sheet…';
+    google.script.run
+      .withSuccessHandler(function (data) { current = data; render(data); })
+      .withFailureHandler(function (err) { fail(err && err.message ? err.message : err); })
+      .getSankeyData(month || null);
+  }
+
+  function fail(text) {
+    document.getElementById('chart').innerHTML = '';
+    document.getElementById('totals').innerHTML = '';
+    var m = document.getElementById('msg');
+    m.style.display = 'block';
+    m.textContent = text;
+    document.getElementById('subtitle').textContent = '';
+  }
+
+  function render(data) {
+    if (!data) return fail('No response from the sheet.');
+
+    // Month picker, even when the payload is an error, so you can switch away.
+    var sel = document.getElementById('month');
+    if (data.months && data.months.length) {
+      sel.innerHTML = data.months.map(function (m) {
+        return '<option value="' + m + '"' + (m === data.month ? ' selected' : '') +
+               '>' + m + '</option>';
+      }).join('');
+    }
+
+    if (data.error) return fail(data.error);
+    document.getElementById('msg').style.display = 'none';
+
+    document.getElementById('subtitle').innerHTML =
+      data.monthLabel + ' &nbsp;·&nbsp; <span class="badge">' + data.source + '</span>';
+
+    var warn = document.getElementById('warn');
+    var notes = [];
+    if (data.overspent > 0.005) {
+      notes.push('You spent ' + money(data.overspent) + ' more than came in this month. ' +
+                 'A Sankey cannot draw a negative flow, so there is no Leftover ribbon — ' +
+                 'the shortfall came out of reserves.');
+    }
+    if (Math.abs(data.unmapped) > 0.005) {
+      notes.push(money(Math.abs(data.unmapped)) + ' is in categories with no bucket yet, ' +
+                 'so it is not in this diagram. See the Flags tab.');
+    }
+    warn.style.display = notes.length ? 'block' : 'none';
+    warn.innerHTML = notes.join('<br><br>');
+
+    if (ready) draw(data); else pending = data;
+    drawTotals(data);
+
+    document.getElementById('foot').innerHTML =
+      'Transfers and anything Tiller marks Hide From Reports are excluded' +
+      (Math.abs(data.excluded) > 0.005
+        ? ' (' + money(Math.abs(data.excluded)) + ' this month)' : '') +
+      ', which is why a credit-card payment does not appear as spend.' +
+      (WIDE ? '' : '<br><br>Tip: 💰 Budget ▸ Money Flow (large window) gives this more room.');
+  }
+
+  function draw(data) {
+    var el = document.getElementById('chart');
+    if (!data.links || !data.links.length) {
+      el.innerHTML = '';
+      return;
+    }
+    var table = new google.visualization.DataTable();
+    table.addColumn('string', 'From');
+    table.addColumn('string', 'To');
+    table.addColumn('number', 'Amount');
+    table.addRows(data.links);
+
+    var width  = Math.max(240, el.clientWidth || (WIDE ? 880 : 276));
+    var height = WIDE ? 420 : Math.max(280, 34 * data.links.length + 90);
+
+    new google.visualization.Sankey(el).draw(table, {
+      width: width,
+      height: height,
+      sankey: {
+        iterations: 0,                 // keep the bucket order stable run to run
+        node: {
+          colors: data.nodeColours,
+          label: { fontName: 'Roboto', fontSize: WIDE ? 13 : 10, color: '#2F3B44' },
+          labelPadding: WIDE ? 8 : 4,
+          nodePadding: WIDE ? 18 : 9,
+          width: WIDE ? 14 : 9
+        },
+        link: { colorMode: 'gradient', colors: data.nodeColours,
+                fillOpacity: 0.45 }
+      },
+      tooltip: { textStyle: { fontName: 'Roboto', fontSize: 12 } }
+    });
+  }
+
+  function drawTotals(data) {
+    var t = data.totals;
+    var rows = [
+      ['Money in',  t.income,   'var(--income)'],
+      ['Fixed',     t.fixed,    'var(--fixed)'],
+      ['Variable',  t.variable, 'var(--variable)'],
+      ['Debt',      t.debt,     'var(--debt)'],
+      ['Savings',   t.savings,  'var(--savings)'],
+      ['Leftover',  t.leftover, 'var(--leftover)']
+    ];
+    document.getElementById('totals').innerHTML =
+      '<table class="totals">' +
+      '<tr class="head"><td>Slice</td><td class="v">Amount</td></tr>' +
+      rows.map(function (r) {
+        return '<tr><td class="k"><span class="swatch" style="background:' + r[2] +
+               '"></span>' + r[0] + '</td><td class="v">' + money(r[1]) + '</td></tr>';
+      }).join('') +
+      '<tr><td class="k"><b>Savings rate</b></td><td class="v">' +
+        Math.round(t.rate * 100) + '%</td></tr>' +
+      '</table>';
+  }
+
+  document.getElementById('month').addEventListener('change', function (e) {
+    load(e.target.value);
+  });
+  document.getElementById('reload').addEventListener('click', function () {
+    load(current ? current.month : null);
+  });
+  window.addEventListener('resize', function () {
+    if (current && ready && !current.error) draw(current);
+  });
+
+  load(null);
+</script>
