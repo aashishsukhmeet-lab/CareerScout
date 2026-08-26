@@ -14,18 +14,32 @@ var SETUP_HEADERS = [
   'Group (Tiller)', 'Type (Tiller)', 'Hidden From Reports', 'Counts in reports?'
 ];
 
-var SETUP_SETTINGS = [
-  ['Monthly savings target',   1000,                         FMT.money,
-   'Fills the first savings-goal bar on the Dashboard.'],
-  ['Cumulative savings goal',  35000,                        FMT.money,
-   'Fills the second bar, measured against real account balances.'],
-  ['Goal label',               'Emergency fund',             FMT.text,
-   'Whatever you want the cumulative bar to be called.'],
-  ['Savings accounts match',   'savings|emergency|hysa',     FMT.text,
-   'Lower-case regex matched against account names in Balances.'],
-  ['Target savings rate',      0.20,                         FMT.pctBig,
-   'The savings-rate card turns green at or above this.']
-];
+/**
+ * The settings block: [label, default, number format, help text].
+ *
+ * This is a function, not a top-level `var`, on purpose. Apps Script evaluates
+ * every file in the project into one shared scope before any function runs, and
+ * the order is not the order you would pick — BudgetSetup is evaluated before
+ * Config. A top-level initializer here that read FMT.money would throw at load
+ * time, and a throw at load time kills the whole project: no function registers,
+ * onOpen never runs, and the menu simply never appears with no error to see.
+ * Reading FMT inside a function defers it to call time, by which point every
+ * file has been evaluated. Same rule applies to anything added here later.
+ */
+function setupSettings_() {
+  return [
+    ['Monthly savings target',   1000,                       FMT.money,
+     'Fills the first savings-goal bar on the Dashboard.'],
+    ['Cumulative savings goal',  35000,                      FMT.money,
+     'Fills the second bar, measured against real account balances.'],
+    ['Goal label',               'Emergency fund',           FMT.text,
+     'Whatever you want the cumulative bar to be called.'],
+    ['Savings accounts match',   'savings|emergency|hysa',   FMT.text,
+     'Lower-case regex matched against account names in Balances.'],
+    ['Target savings rate',      0.20,                       FMT.pctBig,
+     'The savings-rate card turns green at or above this.']
+  ];
+}
 
 
 /* ---------------------------------------------------------------------------
@@ -109,8 +123,9 @@ function buildBudgetSetup_(ss, src) {
   // --- settings block ------------------------------------------------------
   sh.getRange('I2:K2').merge().setValue('SETTINGS')
     .setFontWeight('bold').setFontColor(INK.heading).setBackground(INK.panel);
-  for (var i = 0; i < SETUP_SETTINGS.length; i++) {
-    var row = 3 + i, def = SETUP_SETTINGS[i];
+  var settings = setupSettings_();
+  for (var i = 0; i < settings.length; i++) {
+    var row = 3 + i, def = settings[i];
     sh.getRange(row, 9).setValue(def[0]).setFontColor(INK.body);
     var cell = sh.getRange(row, 10);
     cell.setValue(keep.settings[def[0]] !== undefined ? keep.settings[def[0]] : def[1]);

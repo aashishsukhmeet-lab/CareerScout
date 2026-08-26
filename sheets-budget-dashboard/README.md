@@ -271,6 +271,20 @@ Everything is in `Config.gs`.
 
 ## Troubleshooting
 
+**No 💰 Budget menu after reloading the spreadsheet.** Something threw while
+Apps Script was evaluating the project, which kills every function in it
+including `onOpen` — silently. Diagnose it by opening the script editor,
+choosing `onOpen` in the function dropdown and clicking **Run**; the execution
+log names the file and line. Two usual causes: a file that didn't paste
+completely, or `SankeySidebar` created as a Script file instead of an HTML one
+(HTML is not valid JavaScript, so it takes the whole project down with it).
+
+Note for anyone extending this: Apps Script evaluates all files into one shared
+scope before any function runs, in an order you do not control. A top-level
+`var X = SOMETHING_FROM_ANOTHER_FILE` will throw at load. Read cross-file
+constants from inside a function instead — see `setupSettings_()` in
+`BudgetSetup.gs`.
+
 **`#REF! — Array result was not expanded`** on `_Calc`. Tiller grew past the
 space `_Calc` had. Run **Set up / refresh everything**; it resizes `_Calc` to the
 source plus 2,000 spare rows.
